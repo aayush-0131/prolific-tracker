@@ -47,8 +47,10 @@ export async function GET(
 // PUT /api/earnings/[id] - Update earning
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }  // ✅ FIXED: Added Promise
 ) {
+  const { id } = await params  // ✅ FIXED: Unwrap the promise
+
   try {
     const session = await getServerSession(authOptions)
 
@@ -64,7 +66,7 @@ export async function PUT(
     // Verify ownership
     const existing = await prisma.earning.findFirst({
       where: {
-        id: params.id,
+        id: id,  // ✅ FIXED: Use unwrapped id
         userId: session.user.id,
       },
     })
@@ -78,7 +80,7 @@ export async function PUT(
 
     const earning = await prisma.earning.update({
       where: {
-        id: params.id,
+        id: id,  // ✅ FIXED: Use unwrapped id
       },
       data: {
         ...body,
