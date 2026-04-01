@@ -11,8 +11,8 @@ export interface CurrencyAmount {
 
 // Fallback rates (used if API fails)
 const FALLBACK_RATES = {
-  GBP_TO_USD: 1.27,
-  USD_TO_GBP: 0.79,
+  GBP_TO_USD: 1.33,
+  USD_TO_GBP: 0.75,
 }
 
 // Cache configuration
