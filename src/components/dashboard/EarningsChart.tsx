@@ -35,7 +35,7 @@ export default function EarningsChart({ data, currency = "GBP" }: EarningsChartP
               tickFormatter={(value) => formatCurrency(value, currency)}
             />
             <Tooltip
-              formatter={(value: number) => formatCurrency(value, currency)}
+              formatter={(value) => formatCurrency(Number(value || 0), currency)}
               labelFormatter={(label) => new Date(label).toLocaleDateString()}
             />
             <Line

@@ -130,7 +130,7 @@ export async function parseProlificCSV(file: File): Promise<CSVParseResult> {
           },
         })
       },
-      error: (error) => {
+      error: (error: Error) => {
         resolve({
           success: false,
           data: [],
