@@ -9,6 +9,22 @@ import { WeeklyGoal } from "@/components/dashboard/WeeklyGoal"
 import { KofiButton } from "@/components/ui/kofi-button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { getRateInfo } from "@/lib/currency"
+
+function ExchangeRateDisplay() {
+  const rateInfo = getRateInfo()
+
+  return (
+    <div className="text-xs text-muted-foreground text-center py-3 border-t mt-6">
+      💱 Exchange rate: $1 USD = £{rateInfo.rate.toFixed(4)} GBP
+      {rateInfo.isLive ? (
+        <span className="ml-2 text-green-600">● Live</span>
+      ) : (
+        <span className="ml-2 text-yellow-600">● Fallback</span>
+      )}
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const { data: session } = useSession()
@@ -77,7 +93,7 @@ export default function DashboardPage() {
 
       <StatsCards stats={analytics.summary} />
 
-      {/* Weekly Goal Widget - NEW! */}
+      {/* Weekly Goal Widget */}
       {analytics.weekly && (
         <WeeklyGoal
           weeklyEarnings={analytics.weekly.earnings}
@@ -90,6 +106,9 @@ export default function DashboardPage() {
       <EarningsChart data={analytics.daily} />
 
       <RecentEarnings earnings={recentEarnings} />
+
+      {/* Exchange Rate Display - Shows live rate at bottom */}
+      <ExchangeRateDisplay />
     </div>
   )
 }
