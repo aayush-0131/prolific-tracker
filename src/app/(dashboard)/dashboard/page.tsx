@@ -91,7 +91,10 @@ export default function DashboardPage() {
       {/* Ko-fi Alert (subtle, top of page) */}
       <KofiButton variant="alert" />
 
-      <StatsCards stats={analytics.summary} />
+      <StatsCards
+      stats={analytics.summary}
+      currency={analytics.currency}
+      />
 
       {/* Weekly Goal Widget */}
       {analytics.weekly && (
