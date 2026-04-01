@@ -6,8 +6,9 @@ import { prisma } from "@/lib/prisma"
 // GET /api/earnings/[id] - Get single earning
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const session = await getServerSession(authOptions)
 
@@ -20,7 +21,7 @@ export async function GET(
 
     const earning = await prisma.earning.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id,
       },
     })
@@ -99,8 +100,9 @@ export async function PUT(
 // DELETE /api/earnings/[id] - Delete earning
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const session = await getServerSession(authOptions)
 
@@ -114,7 +116,7 @@ export async function DELETE(
     // Verify ownership
     const existing = await prisma.earning.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id,
       },
     })
@@ -128,7 +130,7 @@ export async function DELETE(
 
     await prisma.earning.delete({
       where: {
-        id: params.id,
+        id: id,
       },
     })
 
