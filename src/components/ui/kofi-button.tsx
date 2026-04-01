@@ -8,8 +8,7 @@ interface KofiButtonProps {
 }
 
 export function KofiButton({ variant = "button" }: KofiButtonProps) {
-  // TODO: Replace with your actual Ko-fi URL after creating account
-  const kofiUrl = "https://ko-fi.com/prolifictracker"
+  const kofiUrl = "https://ko-fi.com/chillguy24951"
 
   if (variant === "card") {
     return (
@@ -26,7 +25,7 @@ export function KofiButton({ variant = "button" }: KofiButtonProps) {
             <Button asChild variant="default" className="bg-orange-500 hover:bg-orange-600 shrink-0">
               <a href={kofiUrl} target="_blank" rel="noopener noreferrer">
                 <Coffee className="mr-2 h-4 w-4" />
-                Buy Me a Coffee
+                Support on Ko-fi
               </a>
             </Button>
           </div>
