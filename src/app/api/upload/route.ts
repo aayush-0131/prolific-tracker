@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { parseProlificCSV } from "@/lib/csv-parser"
+import { fetchLiveRates } from "@/lib/currency"
 
 // POST /api/upload - Upload and parse CSV file
 // POST /api/upload - Upload and parse CSV file
@@ -16,6 +17,10 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       )
     }
+
+        // ✅ ADD THESE 2 LINES
+    console.log("🔄 Fetching live exchange rates before CSV import...")
+    await fetchLiveRates()
 
     const formData = await req.formData()
     const file = formData.get("file") as File
