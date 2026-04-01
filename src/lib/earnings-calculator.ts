@@ -29,11 +29,15 @@ export function calculateEarning(data: {
 }): EarningCalculation {
   const status = data.status as EarningStatus
   let totalEarning = 0
+  let actualCurrency = data.rewardCurrency
 
+  // ✅ FIXED: Calculate total in original currency
   if (status === "APPROVED") {
     totalEarning = data.reward + data.bonus
   } else if (status === "SCREENED OUT") {
+    // For screened out, only count bonus
     totalEarning = data.bonus
+    actualCurrency = (data.bonusCurrency || data.rewardCurrency) as Currency
   } else if (status === "AWAITING REVIEW") {
     totalEarning = data.reward + data.bonus
   } else {
@@ -47,8 +51,9 @@ export function calculateEarning(data: {
     hourlyRate = (totalEarning / durationMinutes) * 60
   }
 
-  const normalizedGBP = normalizeToGBP(totalEarning, data.rewardCurrency)
-  const normalizedUSD = normalizeToUSD(totalEarning, data.rewardCurrency)
+  // ✅ FIXED: Normalize using the actual currency
+  const normalizedGBP = normalizeToGBP(totalEarning, actualCurrency)
+  const normalizedUSD = normalizeToUSD(totalEarning, actualCurrency)
 
   const shouldCount = ["APPROVED", "SCREENED OUT"].includes(status)
   const isPending = status === "AWAITING REVIEW"
