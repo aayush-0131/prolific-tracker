@@ -1,8 +1,12 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { formatCurrency, truncateText } from "@/lib/utils"
 import { getStatusColor, getStatusDisplay } from "@/lib/earnings-calculator"
-import { formatDateTime, getRelativeTime } from "@/lib/date-utils"
+import { getRelativeTime } from "@/lib/date-utils"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
@@ -11,16 +15,52 @@ interface Earning {
   id: string
   studyTitle: string
   totalEarning: number
+  normalizedGBP: number
+  normalizedUSD: number
   rewardCurrency: string
   status: string
   startedAt: Date | null
 }
 
-interface RecentEarningsProps {
-  earnings: Earning[]
-}
+export default function RecentEarnings() {
+  const [earnings, setEarnings] = useState<Earning[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-export default function RecentEarnings({ earnings }: RecentEarningsProps) {
+  useEffect(() => {
+    const fetchEarnings = async () => {
+      try {
+        const response = await fetch("/api/earnings?limit=5")
+        if (!response.ok) throw new Error("Failed to fetch")
+        const data = await response.json()
+        setEarnings(data)
+      } catch (error) {
+        console.error("Error fetching earnings:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchEarnings()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Earnings</CardTitle>
+          <CardDescription>Your latest study completions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map(i => (
+              <Skeleton key={i} className="h-20" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -62,9 +102,12 @@ export default function RecentEarnings({ earnings }: RecentEarningsProps) {
                     {getStatusDisplay(earning.status)}
                   </Badge>
                   <div className="text-right">
-                    <p className="font-semibold">
-                      {formatCurrency(earning.totalEarning, earning.rewardCurrency)}
-                    </p>
+                    <div className="font-semibold text-sm">
+                      £{earning.normalizedGBP?.toFixed(2) || "0.00"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      ${earning.normalizedUSD?.toFixed(2) || "0.00"}
+                    </div>
                   </div>
                 </div>
               </div>

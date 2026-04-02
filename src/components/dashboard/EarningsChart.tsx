@@ -1,49 +1,80 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { formatCurrency } from "@/lib/utils"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
+import { format, parseISO } from "date-fns"
 
 interface EarningsChartProps {
   data: Array<{
     date: string
-    amount: number
+    amountGBP: number
+    amountUSD: number
     count: number
   }>
-  currency?: string
+  currency: string
 }
 
-export default function EarningsChart({ data, currency = "GBP" }: EarningsChartProps) {
+export default function EarningsChart({ data, currency }: EarningsChartProps) {
+  const chartData = data.map(item => ({
+    date: format(parseISO(item.date), "M/d"),
+    GBP: item.amountGBP,
+    USD: item.amountUSD,
+    count: item.count,
+  }))
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Earnings Overview</CardTitle>
-        <CardDescription>Daily earnings for the last 30 days</CardDescription>
+        <CardDescription>Daily earnings for the last 30 days (both currencies)</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data}>
+        <ResponsiveContainer width="100%" height={350}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="date"
-              tickFormatter={(value) => {
-                const date = new Date(value)
-                return `${date.getMonth() + 1}/${date.getDate()}`
-              }}
+              tick={{ fontSize: 12 }}
+              tickMargin={10}
             />
             <YAxis
-              tickFormatter={(value) => formatCurrency(value, currency)}
+              tick={{ fontSize: 12 }}
+              tickFormatter={(value) => `£${value}`}
             />
             <Tooltip
-              formatter={(value) => formatCurrency(Number(value || 0), currency)}
-              labelFormatter={(label) => new Date(label).toLocaleDateString()}
+              content={({ active, payload }) => {
+                if (!active || !payload || !payload.length) return null
+
+                return (
+                  <div className="bg-white p-3 border rounded-lg shadow-lg">
+                    <p className="font-semibold">{payload[0].payload.date}</p>
+                    <p className="text-green-600">£{payload[0].payload.GBP.toFixed(2)}</p>
+                    <p className="text-blue-600">${payload[0].payload.USD.toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {payload[0].payload.count} studies
+                    </p>
+                  </div>
+                )
+              }}
+            />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="GBP"
+              stroke="#22c55e"
+              strokeWidth={2}
+              name="GBP (£)"
+              dot={{ r: 3 }}
+              activeDot={{ r: 5 }}
             />
             <Line
               type="monotone"
-              dataKey="amount"
-              stroke="#3B82F6"
+              dataKey="USD"
+              stroke="#3b82f6"
               strokeWidth={2}
-              dot={false}
+              name="USD ($)"
+              dot={{ r: 3 }}
+              activeDot={{ r: 5 }}
             />
           </LineChart>
         </ResponsiveContainer>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import { KofiButton } from "@/components/ui/kofi-button"
 import { getInitials } from "@/lib/utils"
 import { LogOut, Download, Loader2, Save, Target } from "lucide-react"
@@ -18,34 +19,70 @@ export default function SettingsPage() {
   const { data: session } = useSession()
   const [isUpdating, setIsUpdating] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
-  const initialized = useRef(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   const [profileData, setProfileData] = useState({
     name: "",
     email: "",
     currency: "GBP",
-    weeklyGoal: 60,
-    fiscalYearStart: 1,
+    weeklyGoal: "60",
+    fiscalYearStart: "1",
   })
-
-  useEffect(() => {
-    if (session?.user && !initialized.current) {
-      setProfileData({
-        name: session.user.name || "",
-        email: session.user.email || "",
-        currency: (session.user as any).currency || "GBP",
-        weeklyGoal: (session.user as any).weeklyGoal || 60,
-        fiscalYearStart: (session.user as any).fiscalYearStart || 1,
-      })
-      initialized.current = true
-    }
-  }, [session])
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   })
+
+  // 🔥 FIX: Fetch settings from DATABASE, not session
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!session?.user) return
+
+      try {
+        // Fetch current settings from analytics endpoint (has fresh DB data)
+        const response = await fetch("/api/analytics")
+        if (response.ok) {
+          const data = await response.json()
+
+          setProfileData({
+            name: session.user.name || "",
+            email: session.user.email || "",
+            // 🔥 USE DATABASE VALUES, NOT SESSION
+            currency: data.currency || "GBP",
+            weeklyGoal: String(data.weekly?.goal || 60),
+            fiscalYearStart: String(data.weekly?.fiscalYearStart || 1),
+          })
+        } else {
+          // Fallback to session if API fails
+          setProfileData({
+            name: session.user.name || "",
+            email: session.user.email || "",
+            currency: "GBP",
+            weeklyGoal: "60",
+            fiscalYearStart: "1",
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error)
+        // Fallback
+        setProfileData({
+          name: session.user.name || "",
+          email: session.user.email || "",
+          currency: "GBP",
+          weeklyGoal: "60",
+          fiscalYearStart: "1",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (session?.user) {
+      fetchSettings()
+    }
+  }, [session])
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,7 +92,8 @@ export default function SettingsPage() {
       return
     }
 
-    if (profileData.weeklyGoal < 0) {
+    const weeklyGoalNum = parseFloat(profileData.weeklyGoal) || 0
+    if (weeklyGoalNum < 0) {
       toast.error("Weekly goal must be positive")
       return
     }
@@ -70,8 +108,8 @@ export default function SettingsPage() {
           name: profileData.name,
           email: profileData.email,
           currency: profileData.currency,
-          weeklyGoal: profileData.weeklyGoal,
-          fiscalYearStart: profileData.fiscalYearStart,
+          weeklyGoal: weeklyGoalNum,
+          fiscalYearStart: parseInt(profileData.fiscalYearStart),
         }),
       })
 
@@ -82,17 +120,21 @@ export default function SettingsPage() {
         return
       }
 
+      // 🔥 FIX: Update local state with response data
       setProfileData({
         name: data.user.name,
         email: data.user.email,
         currency: data.user.currency,
-        weeklyGoal: parseFloat(data.user.weeklyGoal),
-        fiscalYearStart: data.user.fiscalYearStart,
+        weeklyGoal: String(data.user.weeklyGoal),
+        fiscalYearStart: String(data.user.fiscalYearStart),
       })
 
-      toast.success("Settings updated successfully!", {
-        duration: 5000,
+      toast.success("Settings saved successfully!", {
+        duration: 3000,
       })
+
+      // 🔥 FIX: Don't reload immediately - let user see the success message
+      // The next page navigation will show updated values
 
     } catch (error) {
       toast.error("Something went wrong")
@@ -183,6 +225,31 @@ export default function SettingsPage() {
     }
   }
 
+  const currencySymbol = profileData.currency === "USD" ? "$" : "£"
+
+  // 🔥 FIX: Show loading state while fetching
+  if (isLoading) {
+    return (
+      <div className="space-y-6 max-w-4xl">
+        <div>
+          <h1 className="text-3xl font-bold">Settings</h1>
+          <p className="text-muted-foreground">Manage your account and preferences</p>
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-24" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-20 w-20 rounded-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-1/2" />
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
@@ -192,7 +259,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Ko-fi Support Card - NEW! */}
+      {/* Ko-fi Support Card */}
       <KofiButton variant="card" />
 
       <Card>
@@ -209,7 +276,7 @@ export default function SettingsPage() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-xl font-semibold">{profileData.name}</p>
+              <p className="text-xl font-semibold">{profileData.name || "User"}</p>
               <p className="text-muted-foreground">{profileData.email}</p>
             </div>
           </div>
@@ -217,7 +284,7 @@ export default function SettingsPage() {
           <Separator />
 
           <form onSubmit={handleProfileUpdate} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
                 <Input
@@ -242,7 +309,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="currency">Default Currency</Label>
                 <Select
@@ -251,7 +318,9 @@ export default function SettingsPage() {
                   disabled={isUpdating}
                 >
                   <SelectTrigger id="currency">
-                    <SelectValue />
+                    <SelectValue>
+                      {profileData.currency === "GBP" ? "£ GBP (British Pound)" : "$ USD (US Dollar)"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="GBP">£ GBP (British Pound)</SelectItem>
@@ -263,12 +332,17 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="fiscalYear">Tax Year Start</Label>
                 <Select
-                  value={profileData.fiscalYearStart.toString()}
-                  onValueChange={(value) => setProfileData({ ...profileData, fiscalYearStart: parseInt(value) })}
+                  value={profileData.fiscalYearStart}
+                  onValueChange={(value) => setProfileData({ ...profileData, fiscalYearStart: value })}
                   disabled={isUpdating}
                 >
                   <SelectTrigger id="fiscalYear">
-                    <SelectValue />
+                    <SelectValue>
+                      {profileData.fiscalYearStart === "1" && "January (US/Calendar Year)"}
+                      {profileData.fiscalYearStart === "4" && "April (UK Tax Year)"}
+                      {profileData.fiscalYearStart === "7" && "July (Australia)"}
+                      {profileData.fiscalYearStart === "10" && "October"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">January (US/Calendar Year)</SelectItem>
@@ -285,21 +359,24 @@ export default function SettingsPage() {
 
             <Separator />
 
-            {/* Weekly Goal - NEW! */}
             <div className="space-y-2">
               <Label htmlFor="weeklyGoal" className="flex items-center gap-2">
                 <Target className="h-4 w-4" />
                 Weekly Earnings Goal
               </Label>
               <div className="flex items-center gap-2">
-                <span className="text-lg">{profileData.currency === "GBP" ? "£" : "$"}</span>
+                <span className="text-lg font-medium">{currencySymbol}</span>
                 <Input
                   id="weeklyGoal"
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={profileData.weeklyGoal}
-                  onChange={(e) => setProfileData({ ...profileData, weeklyGoal: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                      setProfileData({ ...profileData, weeklyGoal: value })
+                    }
+                  }}
                   placeholder="60.00"
                   disabled={isUpdating}
                   className="max-w-xs"
@@ -314,7 +391,7 @@ export default function SettingsPage() {
               {isUpdating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
+                  Saving...
                 </>
               ) : (
                 <>
@@ -401,7 +478,6 @@ export default function SettingsPage() {
       <Card className="border-red-200">
         <CardHeader>
           <CardTitle className="text-red-600">Danger Zone</CardTitle>
-          <CardDescription>Irreversible actions</CardDescription>
         </CardHeader>
         <CardContent>
           <Button

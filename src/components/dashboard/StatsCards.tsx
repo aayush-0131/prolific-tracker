@@ -1,103 +1,90 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatCurrency } from "@/lib/utils"
-import { TrendingUp, TrendingDown, Minus } from "lucide-react"
-import { cn } from "@/lib/utils"
-
-interface StatCardProps {
-  title: string
-  value: number
-  currency?: string
-  change?: number
-  count?: number
-}
-
-function StatCard({ title, value, currency = "GBP", change, count }: StatCardProps) {
-  const isPositive = change && change > 0
-  const isNegative = change && change < 0
-  const isNeutral = change === 0
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">
-          {formatCurrency(value, currency)}
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          {count !== undefined && (
-            <p className="text-xs text-muted-foreground">
-              {count} {count === 1 ? "study" : "studies"}
-            </p>
-          )}
-          {change !== undefined && (
-            <div className="flex items-center text-xs">
-              {isPositive && (
-                <>
-                  <TrendingUp className="mr-1 h-3 w-3 text-green-600" />
-                  <span className="text-green-600">+{change.toFixed(1)}%</span>
-                </>
-              )}
-              {isNegative && (
-                <>
-                  <TrendingDown className="mr-1 h-3 w-3 text-red-600" />
-                  <span className="text-red-600">{change.toFixed(1)}%</span>
-                </>
-              )}
-              {isNeutral && (
-                <>
-                  <Minus className="mr-1 h-3 w-3 text-gray-400" />
-                  <span className="text-gray-400">0%</span>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
+import { DollarSign, TrendingUp, Calendar, BarChart3 } from "lucide-react"
 
 interface StatsCardsProps {
-  stats: {
-    today: { total: number; count: number }
-    week: { total: number; count: number }
-    month: { total: number; count: number }
-    allTime: { total: number; count: number }
+  analytics: {
+    summary: {
+      today: { totalGBP: number; totalUSD: number; count: number }
+      week: { totalGBP: number; totalUSD: number; count: number }
+      month: { totalGBP: number; totalUSD: number; count: number }
+      allTime: { totalGBP: number; totalUSD: number; count: number }
+    }
+    currency: string
   }
-  currency?: string
 }
 
-export default function StatsCards({ stats, currency = "GBP" }: StatsCardsProps) {
+export default function StatsCards({ analytics }: StatsCardsProps) {
+  const { summary } = analytics
+
+  const cards = [
+    {
+      title: "Today",
+      gbp: summary.today.totalGBP,
+      usd: summary.today.totalUSD,
+      count: summary.today.count,
+      icon: DollarSign,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+    },
+    {
+      title: "This Week",
+      gbp: summary.week.totalGBP,
+      usd: summary.week.totalUSD,
+      count: summary.week.count,
+      icon: TrendingUp,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+    },
+    {
+      title: "This Month",
+      gbp: summary.month.totalGBP,
+      usd: summary.month.totalUSD,
+      count: summary.month.count,
+      icon: Calendar,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+    },
+    {
+      title: "All Time",
+      gbp: summary.allTime.totalGBP,
+      usd: summary.allTime.totalUSD,
+      count: summary.allTime.count,
+      icon: BarChart3,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+    },
+  ]
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <StatCard
-        title="Today"
-        value={stats.today.total}
-        currency={currency}
-        count={stats.today.count}
-      />
-      <StatCard
-        title="This Week"
-        value={stats.week.total}
-        currency={currency}
-        count={stats.week.count}
-      />
-      <StatCard
-        title="This Month"
-        value={stats.month.total}
-        currency={currency}
-        count={stats.month.count}
-      />
-      <StatCard
-        title="All Time"
-        value={stats.allTime.total}
-        currency={currency}
-        count={stats.allTime.count}
-      />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {cards.map((card) => {
+        const Icon = card.icon
+        return (
+          <Card key={card.title}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {card.title}
+              </CardTitle>
+              <div className={`p-2 rounded-full ${card.bgColor}`}>
+                <Icon className={`h-4 w-4 ${card.color}`} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold">
+                  £{card.gbp.toFixed(2)}
+                </div>
+                <div className="text-lg text-muted-foreground">
+                  ${card.usd.toFixed(2)}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {card.count} {card.count === 1 ? "study" : "studies"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })}
     </div>
   )
 }

@@ -60,15 +60,71 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
+      // On sign in, fetch full user data from DB
       if (user) {
-        token.id = user.id
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            currency: true,
+            weeklyGoal: true,
+            fiscalYearStart: true,
+          },
+        })
+
+        if (dbUser) {
+          token.id = dbUser.id
+          token.name = dbUser.name
+          token.email = dbUser.email
+          token.picture = dbUser.image
+          token.currency = dbUser.currency
+          token.weeklyGoal = dbUser.weeklyGoal
+          token.fiscalYearStart = dbUser.fiscalYearStart
+        }
       }
+
+      // On session update (after settings change), refresh from DB
+      if (trigger === "update" && token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            currency: true,
+            weeklyGoal: true,
+            fiscalYearStart: true,
+          },
+        })
+
+        if (dbUser) {
+          token.name = dbUser.name
+          token.email = dbUser.email
+          token.picture = dbUser.image
+          token.currency = dbUser.currency
+          token.weeklyGoal = dbUser.weeklyGoal
+          token.fiscalYearStart = dbUser.fiscalYearStart
+        }
+      }
+
       return token
     },
+
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
+        session.user.name = token.name as string
+        session.user.email = token.email as string
+        session.user.image = token.picture as string
+        // Add custom fields to session
+        ;(session.user as any).currency = token.currency || "GBP"
+        ;(session.user as any).weeklyGoal = token.weeklyGoal || 60
+        ;(session.user as any).fiscalYearStart = token.fiscalYearStart || 1
       }
       return session
     }

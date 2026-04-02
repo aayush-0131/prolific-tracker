@@ -45,78 +45,84 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    // ✅ FIXED: Calculate summaries using normalized currency
-    const calculateSummary = (earnings: any[], userCurrency: string = "GBP") => {
+    // ✅ DUAL CURRENCY: Calculate summaries for BOTH GBP and USD
+    const calculateSummary = (earnings: any[]) => {
       const approved = earnings.filter(e => e.status === "APPROVED")
       const pending = earnings.filter(e => e.status === "AWAITING REVIEW")
       const screenedOut = earnings.filter(e => e.status === "SCREENED OUT")
 
-      // ✅ FIXED: Use normalizedGBP or normalizedUSD based on user preference
-      const getNormalizedValue = (earning: any) => {
-        if (userCurrency === "GBP") {
-          return earning.normalizedGBP || 0
-        } else {
-          return earning.normalizedUSD || 0
-        }
-      }
-
-      const total = [
-        ...approved.map(e => getNormalizedValue(e)),
-        ...screenedOut.map(e => getNormalizedValue(e)),
+      // Calculate totals in BOTH currencies
+      const totalGBP = [
+        ...approved.map(e => e.normalizedGBP || 0),
+        ...screenedOut.map(e => e.normalizedGBP || 0),
       ].reduce((sum, val) => sum + val, 0)
 
-      const approvedTotal = approved
-        .map(e => getNormalizedValue(e))
+      const totalUSD = [
+        ...approved.map(e => e.normalizedUSD || 0),
+        ...screenedOut.map(e => e.normalizedUSD || 0),
+      ].reduce((sum, val) => sum + val, 0)
+
+      const approvedGBP = approved
+        .map(e => e.normalizedGBP || 0)
         .reduce((sum, val) => sum + val, 0)
 
-      const pendingTotal = pending
-        .map(e => getNormalizedValue(e))
+      const approvedUSD = approved
+        .map(e => e.normalizedUSD || 0)
+        .reduce((sum, val) => sum + val, 0)
+
+      const pendingGBP = pending
+        .map(e => e.normalizedGBP || 0)
+        .reduce((sum, val) => sum + val, 0)
+
+      const pendingUSD = pending
+        .map(e => e.normalizedUSD || 0)
         .reduce((sum, val) => sum + val, 0)
 
       return {
-        total,
-        approved: approvedTotal,
-        pending: pendingTotal,
+        totalGBP,
+        totalUSD,
+        approvedGBP,
+        approvedUSD,
+        pendingGBP,
+        pendingUSD,
         count: earnings.length,
       }
     }
 
     const today = calculateSummary(
-      allEarnings.filter(e => e.startedAt && e.startedAt >= todayStart),
-      user.currency
+      allEarnings.filter(e => e.startedAt && e.startedAt >= todayStart)
     )
 
     const week = calculateSummary(
-      allEarnings.filter(e => e.startedAt && e.startedAt >= weekStart),
-      user.currency
+      allEarnings.filter(e => e.startedAt && e.startedAt >= weekStart)
     )
 
     const month = calculateSummary(
-      allEarnings.filter(e => e.startedAt && e.startedAt >= monthStart),
-      user.currency
+      allEarnings.filter(e => e.startedAt && e.startedAt >= monthStart)
     )
 
-    const allTime = calculateSummary(allEarnings, user.currency)
+    const allTime = calculateSummary(allEarnings)
 
-    // Daily earnings for chart (last 30 days)
-    const dailyMap = new Map<string, { amount: number; count: number }>()
+    // Daily earnings for chart (last 30 days) - DUAL CURRENCY
+    const dailyMap = new Map<string, { amountGBP: number; amountUSD: number; count: number }>()
 
     allEarnings.forEach(earning => {
       if (!earning.startedAt) return
 
       const dateKey = format(earning.startedAt, "yyyy-MM-dd")
-      const current = dailyMap.get(dateKey) || { amount: 0, count: 0 }
+      const current = dailyMap.get(dateKey) || { amountGBP: 0, amountUSD: 0, count: 0 }
 
-      // ✅ FIXED: Use normalized values
-      let amount = 0
+      // Only count approved and screened out
+      let amountGBP = 0
+      let amountUSD = 0
       if (earning.status === "APPROVED" || earning.status === "SCREENED OUT") {
-        amount = user.currency === "GBP"
-          ? (earning.normalizedGBP || 0)
-          : (earning.normalizedUSD || 0)
+        amountGBP = earning.normalizedGBP || 0
+        amountUSD = earning.normalizedUSD || 0
       }
 
       dailyMap.set(dateKey, {
-        amount: current.amount + amount,
+        amountGBP: current.amountGBP + amountGBP,
+        amountUSD: current.amountUSD + amountUSD,
         count: current.count + 1,
       })
     })
@@ -126,20 +132,16 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => a.date.localeCompare(b.date))
       .slice(-30)
 
-    // Status breakdown
-    const statusMap = new Map<string, { count: number; amount: number }>()
+    // Status breakdown - DUAL CURRENCY
+    const statusMap = new Map<string, { count: number; amountGBP: number; amountUSD: number }>()
 
     allEarnings.forEach(earning => {
-      const current = statusMap.get(earning.status) || { count: 0, amount: 0 }
-
-      // ✅ FIXED: Use normalized amount
-      const normalizedAmount = user.currency === "GBP"
-        ? (earning.normalizedGBP || 0)
-        : (earning.normalizedUSD || 0)
+      const current = statusMap.get(earning.status) || { count: 0, amountGBP: 0, amountUSD: 0 }
 
       statusMap.set(earning.status, {
         count: current.count + 1,
-        amount: current.amount + normalizedAmount,
+        amountGBP: current.amountGBP + (earning.normalizedGBP || 0),
+        amountUSD: current.amountUSD + (earning.normalizedUSD || 0),
       })
     })
 
@@ -147,7 +149,8 @@ export async function GET(req: NextRequest) {
     const statusBreakdown = Array.from(statusMap.entries()).map(([status, data]) => ({
       status,
       count: data.count,
-      amount: data.amount,
+      amountGBP: data.amountGBP,
+      amountUSD: data.amountUSD,
       percentage: (data.count / totalEarnings) * 100,
     }))
 
@@ -163,9 +166,10 @@ export async function GET(req: NextRequest) {
       ? earningsWithDuration.reduce((sum, e) => sum + (e.durationMinutes || 0), 0) / earningsWithDuration.length
       : 0
 
-    // Weekly goal data
+    // Weekly goal data - DUAL CURRENCY
     const weeklyData = {
-      earnings: week.total,
+      earningsGBP: week.totalGBP,
+      earningsUSD: week.totalUSD,
       goal: parseFloat((user.weeklyGoal || 0).toString()),
       currency: user.currency,
       studyCount: week.count,
@@ -178,6 +182,7 @@ export async function GET(req: NextRequest) {
         month,
         allTime,
       },
+      currency: user.currency,
       daily,
       statusBreakdown,
       averageHourlyRate,

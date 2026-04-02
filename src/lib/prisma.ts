@@ -8,6 +8,17 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    // 🔥 ADD THIS - prevents connection exhaustion
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+// 🔥 ADD THIS - graceful shutdown
+process.on('beforeExit', async () => {
+  await prisma.$disconnect()
+})
