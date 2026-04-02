@@ -28,22 +28,47 @@ export function calculateEarning(data: {
   status: string
 }): EarningCalculation {
   const status = data.status as EarningStatus
-  let totalEarning = 0
-  let actualCurrency = data.rewardCurrency
+  const bonusCurrency = (data.bonusCurrency || data.rewardCurrency) as Currency
 
-  // ✅ FIXED: Calculate total in original currency
-  if (status === "APPROVED") {
-    totalEarning = data.reward + data.bonus
-  } else if (status === "SCREENED OUT") {
-    // For screened out, only count bonus
-    totalEarning = data.bonus
-    actualCurrency = (data.bonusCurrency || data.rewardCurrency) as Currency
-  } else if (status === "AWAITING REVIEW") {
-    totalEarning = data.reward + data.bonus
-  } else {
-    totalEarning = 0
+  let rewardAmount = 0
+  let bonusAmount = 0
+
+  // 🔥 FIX: Handle reward and bonus separately for each status
+  switch (status) {
+    case "APPROVED":
+      rewardAmount = data.reward
+      bonusAmount = data.bonus
+      break
+
+    case "AWAITING REVIEW":
+      rewardAmount = data.reward
+      bonusAmount = data.bonus
+      break
+
+    case "SCREENED OUT":
+      // Screened out: no reward, but might get bonus
+      rewardAmount = 0
+      bonusAmount = data.bonus
+      break
+
+    case "RETURNED":
+      // 🔥 FIX: Returned studies might have partial payment (bonus)
+      rewardAmount = 0
+      bonusAmount = data.bonus
+      break
+
+    case "REJECTED":
+    case "TIMED-OUT":
+    default:
+      rewardAmount = 0
+      bonusAmount = data.bonus // 🔥 FIX: Still count any bonus
+      break
   }
 
+  // Total in original currency
+  const totalEarning = rewardAmount + bonusAmount
+
+  // Calculate duration and hourly rate
   const durationMinutes = calculateDuration(data.startedAt || null, data.completedAt || null)
   let hourlyRate: number | null = null
 
@@ -51,11 +76,21 @@ export function calculateEarning(data: {
     hourlyRate = (totalEarning / durationMinutes) * 60
   }
 
-  // ✅ FIXED: Normalize using the actual currency
-  const normalizedGBP = normalizeToGBP(totalEarning, actualCurrency)
-  const normalizedUSD = normalizeToUSD(totalEarning, actualCurrency)
+  // 🔥 FIX: Normalize reward and bonus SEPARATELY
+  // They might be in different currencies!
+  const rewardGBP = normalizeToGBP(rewardAmount, data.rewardCurrency)
+  const bonusGBP = normalizeToGBP(bonusAmount, bonusCurrency)
+  const normalizedGBP = rewardGBP + bonusGBP
 
-  const shouldCount = ["APPROVED", "SCREENED OUT"].includes(status)
+  const rewardUSD = normalizeToUSD(rewardAmount, data.rewardCurrency)
+  const bonusUSD = normalizeToUSD(bonusAmount, bonusCurrency)
+  const normalizedUSD = rewardUSD + bonusUSD
+
+  // 🔥 FIX: Count any earning that has value
+  const shouldCount = (
+    ["APPROVED", "SCREENED OUT"].includes(status) ||
+    (["RETURNED", "REJECTED", "TIMED-OUT"].includes(status) && bonusAmount > 0)
+  )
   const isPending = status === "AWAITING REVIEW"
 
   return {

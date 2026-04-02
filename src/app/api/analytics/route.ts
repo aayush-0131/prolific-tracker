@@ -45,21 +45,32 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    // 🔥 FIX: Statuses that should be counted in totals
+    const COUNTABLE_STATUSES = ["APPROVED", "SCREENED OUT"]
+
     // ✅ DUAL CURRENCY: Calculate summaries for BOTH GBP and USD
     const calculateSummary = (earnings: any[]) => {
       const approved = earnings.filter(e => e.status === "APPROVED")
       const pending = earnings.filter(e => e.status === "AWAITING REVIEW")
       const screenedOut = earnings.filter(e => e.status === "SCREENED OUT")
 
+      // 🔥 FIX: Also count returned/rejected/timed-out that have earnings
+      const returnedWithBonus = earnings.filter(e =>
+        ["RETURNED", "REJECTED", "TIMED-OUT"].includes(e.status) &&
+        ((e.normalizedGBP || 0) > 0 || (e.normalizedUSD || 0) > 0)
+      )
+
       // Calculate totals in BOTH currencies
       const totalGBP = [
         ...approved.map(e => e.normalizedGBP || 0),
         ...screenedOut.map(e => e.normalizedGBP || 0),
+        ...returnedWithBonus.map(e => e.normalizedGBP || 0),
       ].reduce((sum, val) => sum + val, 0)
 
       const totalUSD = [
         ...approved.map(e => e.normalizedUSD || 0),
         ...screenedOut.map(e => e.normalizedUSD || 0),
+        ...returnedWithBonus.map(e => e.normalizedUSD || 0),
       ].reduce((sum, val) => sum + val, 0)
 
       const approvedGBP = approved
@@ -112,10 +123,15 @@ export async function GET(req: NextRequest) {
       const dateKey = format(earning.startedAt, "yyyy-MM-dd")
       const current = dailyMap.get(dateKey) || { amountGBP: 0, amountUSD: 0, count: 0 }
 
-      // Only count approved and screened out
+      // 🔥 FIX: Count any earning with value (not just approved/screened out)
       let amountGBP = 0
       let amountUSD = 0
+
       if (earning.status === "APPROVED" || earning.status === "SCREENED OUT") {
+        amountGBP = earning.normalizedGBP || 0
+        amountUSD = earning.normalizedUSD || 0
+      } else if ((earning.normalizedGBP || 0) > 0 || (earning.normalizedUSD || 0) > 0) {
+        // Returned/rejected with bonus
         amountGBP = earning.normalizedGBP || 0
         amountUSD = earning.normalizedUSD || 0
       }
@@ -151,17 +167,17 @@ export async function GET(req: NextRequest) {
       count: data.count,
       amountGBP: data.amountGBP,
       amountUSD: data.amountUSD,
-      percentage: (data.count / totalEarnings) * 100,
+      percentage: totalEarnings > 0 ? (data.count / totalEarnings) * 100 : 0,
     }))
 
     // Average hourly rate
-    const earningsWithRate = allEarnings.filter(e => e.hourlyRate !== null)
+    const earningsWithRate = allEarnings.filter(e => e.hourlyRate !== null && e.hourlyRate > 0)
     const averageHourlyRate = earningsWithRate.length > 0
       ? earningsWithRate.reduce((sum, e) => sum + (e.hourlyRate || 0), 0) / earningsWithRate.length
       : 0
 
     // Average study duration
-    const earningsWithDuration = allEarnings.filter(e => e.durationMinutes !== null)
+    const earningsWithDuration = allEarnings.filter(e => e.durationMinutes !== null && e.durationMinutes > 0)
     const averageStudyDuration = earningsWithDuration.length > 0
       ? earningsWithDuration.reduce((sum, e) => sum + (e.durationMinutes || 0), 0) / earningsWithDuration.length
       : 0
