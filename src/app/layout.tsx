@@ -5,6 +5,7 @@ import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 import AuthProvider from "@/components/providers/AuthProvider"
 import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -85,7 +86,6 @@ export const metadata: Metadata = {
   // 🔥 Verification (uncomment and add your codes when you have them)
   // verification: {
   //   google: "your-google-verification-code",
-  //   yandex: "your-yandex-verification-code",
   // },
 
   // 🔥 Alternate languages (if you add multi-language support later)
@@ -141,8 +141,11 @@ export default function RootLayout({
           <Toaster position="top-center" richColors />
         </AuthProvider>
 
-        {/* 🔥 Vercel Analytics */}
+        {/* 🔥 Vercel Analytics - Track pageviews and user behavior */}
         <Analytics />
+
+        {/* 🔥 Vercel Speed Insights - Track performance metrics */}
+        <SpeedInsights />
 
         {/* 🔥 Structured Data for Google Rich Results */}
         <Script
