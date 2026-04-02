@@ -254,7 +254,7 @@ export default function LandingPage() {
           <div className="text-center text-sm text-muted-foreground">
             <p>
               Made with ❤️ by a Prolific researcher •{" "}
-              <a href="https://ko-fi.com/prolifictracker" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              <a href="https://ko-fi.com/chillguy24951" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                 Buy me a coffee
               </a>
             </p>
