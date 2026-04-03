@@ -32,7 +32,7 @@ export default function RecentEarnings() {
         const response = await fetch("/api/earnings?limit=5")
         if (!response.ok) throw new Error("Failed to fetch")
         const data = await response.json()
-        setEarnings(data)
+        setEarnings(data.earnings || []) // ✅ FIX: Extract earnings array
       } catch (error) {
         console.error("Error fetching earnings:", error)
       } finally {
@@ -102,11 +102,19 @@ export default function RecentEarnings() {
                     {getStatusDisplay(earning.status)}
                   </Badge>
                   <div className="text-right">
+                    {/* ✅ FIX: Show native currency first */}
                     <div className="font-semibold text-sm">
-                      £{earning.normalizedGBP?.toFixed(2) || "0.00"}
+                      {earning.rewardCurrency === "GBP"
+                        ? `£${earning.totalEarning?.toFixed(2) || "0.00"}`
+                        : `$${earning.totalEarning?.toFixed(2) || "0.00"}`
+                      }
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      ${earning.normalizedUSD?.toFixed(2) || "0.00"}
+                      {/* Show converted amount as reference */}
+                      {earning.rewardCurrency === "GBP"
+                        ? `≈ $${earning.normalizedUSD?.toFixed(2) || "0.00"}`
+                        : `≈ £${earning.normalizedGBP?.toFixed(2) || "0.00"}`
+                      }
                     </div>
                   </div>
                 </div>
