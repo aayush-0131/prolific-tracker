@@ -21,6 +21,92 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get("startDate")
     const endDate = searchParams.get("endDate")
     const limit = searchParams.get("limit")
+    const debug = searchParams.get("debug") // ✅ NEW: Debug mode
+
+    // ✅ NEW: Debug endpoint
+    if (debug === "native") {
+      const allEarnings = await prisma.earning.findMany({
+        where: { userId: session.user.id },
+        orderBy: { startedAt: "desc" },
+      })
+
+      const countable = allEarnings.filter(e =>
+        e.status === "APPROVED" || e.status === "SCREENED OUT"
+      )
+
+      let nativeGBP = 0
+      let nativeUSD = 0
+
+      countable.forEach(e => {
+        const earningCurrency = e.status === "SCREENED OUT"
+          ? (e.bonusCurrency || e.rewardCurrency)
+          : e.rewardCurrency
+
+        if (earningCurrency === "GBP") {
+          nativeGBP += e.totalEarning || 0
+        } else if (earningCurrency === "USD") {
+          nativeUSD += e.totalEarning || 0
+        }
+      })
+
+      const gbpEarnings = countable.filter(e => {
+        const currency = e.status === "SCREENED OUT"
+          ? (e.bonusCurrency || e.rewardCurrency)
+          : e.rewardCurrency
+        return currency === "GBP"
+      })
+
+      const usdEarnings = countable.filter(e => {
+        const currency = e.status === "SCREENED OUT"
+          ? (e.bonusCurrency || e.rewardCurrency)
+          : e.rewardCurrency
+        return currency === "USD"
+      })
+
+      return NextResponse.json({
+        summary: {
+          totalEarnings: allEarnings.length,
+          approvedCount: allEarnings.filter(e => e.status === "APPROVED").length,
+          screenedOutCount: allEarnings.filter(e => e.status === "SCREENED OUT").length,
+          countableCount: countable.length,
+          nativeGBP,
+          nativeUSD,
+        },
+        breakdown: {
+          gbpCount: gbpEarnings.length,
+          gbpTotal: gbpEarnings.reduce((sum, e) => sum + (e.totalEarning || 0), 0),
+          gbpSample: gbpEarnings.slice(0, 5).map(e => ({
+            title: e.studyTitle,
+            totalEarning: e.totalEarning,
+            reward: e.reward,
+            bonus: e.bonus,
+            status: e.status,
+            rewardCurrency: e.rewardCurrency,
+            bonusCurrency: e.bonusCurrency,
+          })),
+          usdCount: usdEarnings.length,
+          usdTotal: usdEarnings.reduce((sum, e) => sum + (e.totalEarning || 0), 0),
+          usdSample: usdEarnings.slice(0, 5).map(e => ({
+            title: e.studyTitle,
+            totalEarning: e.totalEarning,
+            reward: e.reward,
+            bonus: e.bonus,
+            status: e.status,
+            rewardCurrency: e.rewardCurrency,
+            bonusCurrency: e.bonusCurrency,
+          })),
+        },
+        zeroEarnings: countable.filter(e => (e.totalEarning || 0) === 0).map(e => ({
+          title: e.studyTitle,
+          status: e.status,
+          reward: e.reward,
+          bonus: e.bonus,
+          totalEarning: e.totalEarning,
+          rewardCurrency: e.rewardCurrency,
+          bonusCurrency: e.bonusCurrency,
+        })),
+      })
+    }
 
     // Build query
     const where: any = {
@@ -49,7 +135,7 @@ export async function GET(req: NextRequest) {
       take: limit ? parseInt(limit) : undefined,
     })
 
-    return NextResponse.json(earnings)
+    return NextResponse.json({ earnings })
 
   } catch (error) {
     console.error("Get earnings error:", error)
@@ -140,7 +226,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: error.issues[0].message },  // ✅ FIXED: errors → issues
+        { error: error.issues[0].message },
         { status: 400 }
       )
     }
