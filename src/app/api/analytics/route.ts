@@ -45,38 +45,46 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    // ✅ Statuses that count as "earned" (matches Prolific)
+    const COUNTABLE_STATUSES = ["APPROVED", "SCREENED OUT"]
+
     // ✅ OPTION C: Calculate BOTH native currency totals AND combined totals
     const calculateSummary = (earnings: any[]) => {
       const approved = earnings.filter(e => e.status === "APPROVED")
       const pending = earnings.filter(e => e.status === "AWAITING REVIEW")
       const screenedOut = earnings.filter(e => e.status === "SCREENED OUT")
 
-      // 🔥 NEW: Separate native currency totals (matches Prolific)
+      // 🔥 FIX: Native currency totals (matches Prolific exactly)
       let nativeGBP = 0
       let nativeUSD = 0
 
       earnings.forEach(e => {
-        if (e.status === "APPROVED" || e.status === "SCREENED OUT") {
-          // Only count earnings in their ORIGINAL currency
-          if (e.rewardCurrency === "GBP") {
+        if (COUNTABLE_STATUSES.includes(e.status)) {
+          // 🔥 FIX: For SCREENED OUT, use bonusCurrency instead of rewardCurrency
+          const earningCurrency = e.status === "SCREENED OUT"
+            ? (e.bonusCurrency || e.rewardCurrency)
+            : e.rewardCurrency
+
+          if (earningCurrency === "GBP") {
             nativeGBP += e.totalEarning || 0
-          } else if (e.rewardCurrency === "USD") {
+          } else if (earningCurrency === "USD") {
             nativeUSD += e.totalEarning || 0
           }
         }
       })
 
-      // 🔥 EXISTING: Combined totals (all earnings converted)
-      const combinedGBP = [
-        ...approved.map(e => e.normalizedGBP || 0),
-        ...screenedOut.map(e => e.normalizedGBP || 0),
-      ].reduce((sum, val) => sum + val, 0)
+      // 🔥 Combined totals (all earnings converted to single currency)
+      const combinedGBP = earnings
+        .filter(e => COUNTABLE_STATUSES.includes(e.status))
+        .map(e => e.normalizedGBP || 0)
+        .reduce((sum, val) => sum + val, 0)
 
-      const combinedUSD = [
-        ...approved.map(e => e.normalizedUSD || 0),
-        ...screenedOut.map(e => e.normalizedUSD || 0),
-      ].reduce((sum, val) => sum + val, 0)
+      const combinedUSD = earnings
+        .filter(e => COUNTABLE_STATUSES.includes(e.status))
+        .map(e => e.normalizedUSD || 0)
+        .reduce((sum, val) => sum + val, 0)
 
+      // Approved only (for reference)
       const approvedGBP = approved
         .map(e => e.normalizedGBP || 0)
         .reduce((sum, val) => sum + val, 0)
@@ -85,6 +93,7 @@ export async function GET(req: NextRequest) {
         .map(e => e.normalizedUSD || 0)
         .reduce((sum, val) => sum + val, 0)
 
+      // Pending only (for reference)
       const pendingGBP = pending
         .map(e => e.normalizedGBP || 0)
         .reduce((sum, val) => sum + val, 0)
@@ -108,6 +117,8 @@ export async function GET(req: NextRequest) {
         pendingGBP,
         pendingUSD,
         count: earnings.length,
+        approvedCount: approved.length,
+        pendingCount: pending.length,
       }
     }
 
@@ -125,7 +136,7 @@ export async function GET(req: NextRequest) {
 
     const allTime = calculateSummary(allEarnings)
 
-    // Daily earnings for chart (last 30 days) - DUAL CURRENCY
+    // Daily earnings for chart (last 30 days)
     const dailyMap = new Map<string, { amountGBP: number; amountUSD: number; count: number }>()
 
     allEarnings.forEach(earning => {
@@ -137,7 +148,7 @@ export async function GET(req: NextRequest) {
       let amountGBP = 0
       let amountUSD = 0
 
-      if (earning.status === "APPROVED" || earning.status === "SCREENED OUT") {
+      if (COUNTABLE_STATUSES.includes(earning.status)) {
         amountGBP = earning.normalizedGBP || 0
         amountUSD = earning.normalizedUSD || 0
       }
@@ -154,7 +165,7 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => a.date.localeCompare(b.date))
       .slice(-30)
 
-    // Status breakdown - DUAL CURRENCY
+    // Status breakdown
     const statusMap = new Map<string, { count: number; amountGBP: number; amountUSD: number }>()
 
     allEarnings.forEach(earning => {
@@ -188,7 +199,7 @@ export async function GET(req: NextRequest) {
       ? earningsWithDuration.reduce((sum, e) => sum + (e.durationMinutes || 0), 0) / earningsWithDuration.length
       : 0
 
-    // Weekly goal data - DUAL CURRENCY
+    // Weekly goal data
     const weeklyData = {
       earningsGBP: week.combinedGBP,
       earningsUSD: week.combinedUSD,
