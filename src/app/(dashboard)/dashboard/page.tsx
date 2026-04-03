@@ -2,72 +2,18 @@
 
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import EarningsChart from "@/components/dashboard/EarningsChart"
 import RecentEarnings from "@/components/dashboard/RecentEarnings"
 import StatsCards from "@/components/dashboard/StatsCards"
 import { Target } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-
-interface AnalyticsData {
-  summary: {
-    today: {
-      totalGBP: number
-      totalUSD: number
-      approvedGBP: number
-      approvedUSD: number
-      pendingGBP: number
-      pendingUSD: number
-      count: number
-    }
-    week: {
-      totalGBP: number
-      totalUSD: number
-      approvedGBP: number
-      approvedUSD: number
-      pendingGBP: number
-      pendingUSD: number
-      count: number
-    }
-    month: {
-      totalGBP: number
-      totalUSD: number
-      approvedGBP: number
-      approvedUSD: number
-      pendingGBP: number
-      pendingUSD: number
-      count: number
-    }
-    allTime: {
-      totalGBP: number
-      totalUSD: number
-      approvedGBP: number
-      approvedUSD: number
-      pendingGBP: number
-      pendingUSD: number
-      count: number
-    }
-  }
-  currency: string
-  daily: Array<{
-    date: string
-    amountGBP: number
-    amountUSD: number
-    count: number
-  }>
-  weekly: {
-    earningsGBP: number
-    earningsUSD: number
-    goal: number
-    currency: string
-    studyCount: number
-  }
-}
+import type { DashboardAnalytics } from "@/types/analytics"
 
 export default function DashboardPage() {
   const { data: session } = useSession()
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
