@@ -45,32 +45,36 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    // 🔥 FIX: Statuses that should be counted in totals
-    const COUNTABLE_STATUSES = ["APPROVED", "SCREENED OUT"]
-
-    // ✅ DUAL CURRENCY: Calculate summaries for BOTH GBP and USD
+    // ✅ OPTION C: Calculate BOTH native currency totals AND combined totals
     const calculateSummary = (earnings: any[]) => {
       const approved = earnings.filter(e => e.status === "APPROVED")
       const pending = earnings.filter(e => e.status === "AWAITING REVIEW")
       const screenedOut = earnings.filter(e => e.status === "SCREENED OUT")
 
-      // 🔥 FIX: Also count returned/rejected/timed-out that have earnings
-      const returnedWithBonus = earnings.filter(e =>
-        ["RETURNED", "REJECTED", "TIMED-OUT"].includes(e.status) &&
-        ((e.normalizedGBP || 0) > 0 || (e.normalizedUSD || 0) > 0)
-      )
+      // 🔥 NEW: Separate native currency totals (matches Prolific)
+      let nativeGBP = 0
+      let nativeUSD = 0
 
-      // Calculate totals in BOTH currencies
-      const totalGBP = [
+      earnings.forEach(e => {
+        if (e.status === "APPROVED" || e.status === "SCREENED OUT") {
+          // Only count earnings in their ORIGINAL currency
+          if (e.rewardCurrency === "GBP") {
+            nativeGBP += e.totalEarning || 0
+          } else if (e.rewardCurrency === "USD") {
+            nativeUSD += e.totalEarning || 0
+          }
+        }
+      })
+
+      // 🔥 EXISTING: Combined totals (all earnings converted)
+      const combinedGBP = [
         ...approved.map(e => e.normalizedGBP || 0),
         ...screenedOut.map(e => e.normalizedGBP || 0),
-        ...returnedWithBonus.map(e => e.normalizedGBP || 0),
       ].reduce((sum, val) => sum + val, 0)
 
-      const totalUSD = [
+      const combinedUSD = [
         ...approved.map(e => e.normalizedUSD || 0),
         ...screenedOut.map(e => e.normalizedUSD || 0),
-        ...returnedWithBonus.map(e => e.normalizedUSD || 0),
       ].reduce((sum, val) => sum + val, 0)
 
       const approvedGBP = approved
@@ -90,8 +94,15 @@ export async function GET(req: NextRequest) {
         .reduce((sum, val) => sum + val, 0)
 
       return {
-        totalGBP,
-        totalUSD,
+        // Native currency totals (matches Prolific)
+        nativeGBP,
+        nativeUSD,
+        // Combined totals (converted)
+        combinedGBP,
+        combinedUSD,
+        // Legacy fields (for backwards compatibility)
+        totalGBP: combinedGBP,
+        totalUSD: combinedUSD,
         approvedGBP,
         approvedUSD,
         pendingGBP,
@@ -123,15 +134,10 @@ export async function GET(req: NextRequest) {
       const dateKey = format(earning.startedAt, "yyyy-MM-dd")
       const current = dailyMap.get(dateKey) || { amountGBP: 0, amountUSD: 0, count: 0 }
 
-      // 🔥 FIX: Count any earning with value (not just approved/screened out)
       let amountGBP = 0
       let amountUSD = 0
 
       if (earning.status === "APPROVED" || earning.status === "SCREENED OUT") {
-        amountGBP = earning.normalizedGBP || 0
-        amountUSD = earning.normalizedUSD || 0
-      } else if ((earning.normalizedGBP || 0) > 0 || (earning.normalizedUSD || 0) > 0) {
-        // Returned/rejected with bonus
         amountGBP = earning.normalizedGBP || 0
         amountUSD = earning.normalizedUSD || 0
       }
@@ -184,8 +190,8 @@ export async function GET(req: NextRequest) {
 
     // Weekly goal data - DUAL CURRENCY
     const weeklyData = {
-      earningsGBP: week.totalGBP,
-      earningsUSD: week.totalUSD,
+      earningsGBP: week.combinedGBP,
+      earningsUSD: week.combinedUSD,
       goal: parseFloat((user.weeklyGoal || 0).toString()),
       currency: user.currency,
       studyCount: week.count,
