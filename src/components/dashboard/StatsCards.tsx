@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DollarSign, TrendingUp, Calendar, BarChart3 } from "lucide-react"
-import { Separator } from "@/components/ui/separator"
 
 interface StatsCardsProps {
   analytics: {
@@ -76,8 +75,10 @@ export default function StatsCards({ analytics }: StatsCardsProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card) => {
         const Icon = card.icon
+        const hasNativeEarnings = card.data.nativeGBP > 0 || card.data.nativeUSD > 0
+
         return (
-          <Card key={card.title}>
+          <Card key={card.title} className="relative overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {card.title}
@@ -87,39 +88,44 @@ export default function StatsCards({ analytics }: StatsCardsProps) {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Native Currency Section (matches Prolific) */}
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Native Currency
-                </p>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="font-semibold">
-                    £{card.data.nativeGBP.toFixed(2)}
+              {/* Combined Total (Primary - Large) */}
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold">
+                    £{card.data.combinedGBP.toFixed(2)}
                   </span>
-                  <span className="text-muted-foreground">|</span>
-                  <span className="font-semibold">
-                    ${card.data.nativeUSD.toFixed(2)}
+                  <span className="text-lg text-muted-foreground">
+                    / ${card.data.combinedUSD.toFixed(2)}
                   </span>
                 </div>
               </div>
 
-              <Separator />
-
-              {/* Combined Total Section */}
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Combined Total
-                </p>
-                <div className="text-2xl font-bold">
-                  £{card.data.combinedGBP.toFixed(2)}
+              {/* Native Currency (Secondary - Small) */}
+              {hasNativeEarnings && (
+                <div className="pt-2 border-t border-dashed">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Native earnings
+                  </p>
+                  <div className="flex items-center gap-3 text-sm">
+                    {card.data.nativeGBP > 0 && (
+                      <span className="font-medium text-emerald-600">
+                        £{card.data.nativeGBP.toFixed(2)}
+                      </span>
+                    )}
+                    {card.data.nativeGBP > 0 && card.data.nativeUSD > 0 && (
+                      <span className="text-muted-foreground">+</span>
+                    )}
+                    {card.data.nativeUSD > 0 && (
+                      <span className="font-medium text-blue-600">
+                        ${card.data.nativeUSD.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  ${card.data.combinedUSD.toFixed(2)}
-                </div>
-              </div>
+              )}
 
               {/* Study Count */}
-              <p className="text-xs text-muted-foreground pt-2">
+              <p className="text-xs text-muted-foreground">
                 {card.data.count} {card.data.count === 1 ? "study" : "studies"}
               </p>
             </CardContent>
