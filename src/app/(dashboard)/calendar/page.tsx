@@ -37,7 +37,7 @@ export default function CalendarPage() {
       const response = await fetch("/api/earnings")
       if (!response.ok) throw new Error("Failed to fetch")
       const data = await response.json()
-      setEarnings(data)
+      setEarnings(data.earnings || []) // ✅ FIX: Extract earnings array
     } catch (error) {
       toast.error("Failed to load earnings")
     } finally {

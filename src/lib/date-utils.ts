@@ -17,9 +17,26 @@ export function formatDateInput(date: Date | string | null | undefined): string 
 
 export function parseProlificTimestamp(timestamp: string): Date | null {
   if (!timestamp || timestamp.trim() === "") return null
+
   try {
-    const isoString = timestamp.replace(" ", "T")
+    // ✅ FIX: Handle Prolific's microsecond format (6 decimal places)
+    // Remove microseconds beyond milliseconds (keep only 3 decimal places)
+    let cleanTimestamp = timestamp.trim()
+
+    // Match pattern: "YYYY-MM-DD HH:MM:SS.microseconds"
+    const microsecondMatch = cleanTimestamp.match(/(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\.(\d+)/)
+
+    if (microsecondMatch) {
+      const [, dateTime, decimals] = microsecondMatch
+      // Trim to 3 decimal places (milliseconds)
+      const milliseconds = decimals.slice(0, 3)
+      cleanTimestamp = `${dateTime}.${milliseconds}`
+    }
+
+    // Convert space to T for ISO format
+    const isoString = cleanTimestamp.replace(" ", "T")
     const date = parseISO(isoString)
+
     return isValid(date) ? date : null
   } catch (error) {
     console.error("Error parsing timestamp:", timestamp, error)

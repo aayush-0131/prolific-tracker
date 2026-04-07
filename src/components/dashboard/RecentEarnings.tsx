@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { formatCurrency, truncateText } from "@/lib/utils"
+import { truncateText } from "@/lib/utils"
 import { getStatusColor, getStatusDisplay } from "@/lib/earnings-calculator"
 import { getRelativeTime } from "@/lib/date-utils"
 import Link from "next/link"
@@ -19,7 +19,8 @@ interface Earning {
   normalizedUSD: number
   rewardCurrency: string
   status: string
-  startedAt: Date | null
+  startedAt: string | null
+  createdAt: string
 }
 
 export default function RecentEarnings() {
@@ -32,7 +33,7 @@ export default function RecentEarnings() {
         const response = await fetch("/api/earnings?limit=5")
         if (!response.ok) throw new Error("Failed to fetch")
         const data = await response.json()
-        setEarnings(data.earnings || []) // ✅ FIX: Extract earnings array
+        setEarnings(data.earnings || [])
       } catch (error) {
         console.error("Error fetching earnings:", error)
       } finally {
@@ -42,6 +43,17 @@ export default function RecentEarnings() {
 
     fetchEarnings()
   }, [])
+
+  // ✅ FIX: Helper function to get the best available date
+  const getDisplayDate = (earning: Earning): string => {
+    if (earning.startedAt) {
+      return getRelativeTime(earning.startedAt)
+    }
+    if (earning.createdAt) {
+      return getRelativeTime(earning.createdAt)
+    }
+    return "No date"
+  }
 
   if (isLoading) {
     return (
@@ -94,7 +106,7 @@ export default function RecentEarnings() {
                     {truncateText(earning.studyTitle, 60)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {earning.startedAt ? getRelativeTime(earning.startedAt) : "Unknown date"}
+                    {getDisplayDate(earning)}
                   </p>
                 </div>
                 <div className="flex items-center space-x-3 ml-4">
@@ -102,18 +114,16 @@ export default function RecentEarnings() {
                     {getStatusDisplay(earning.status)}
                   </Badge>
                   <div className="text-right">
-                    {/* ✅ FIX: Show native currency first */}
                     <div className="font-semibold text-sm">
                       {earning.rewardCurrency === "GBP"
-                        ? `£${earning.totalEarning?.toFixed(2) || "0.00"}`
-                        : `$${earning.totalEarning?.toFixed(2) || "0.00"}`
+                        ? `£${(earning.totalEarning || 0).toFixed(2)}`
+                        : `$${(earning.totalEarning || 0).toFixed(2)}`
                       }
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {/* Show converted amount as reference */}
                       {earning.rewardCurrency === "GBP"
-                        ? `≈ $${earning.normalizedUSD?.toFixed(2) || "0.00"}`
-                        : `≈ £${earning.normalizedGBP?.toFixed(2) || "0.00"}`
+                        ? `≈ $${(earning.normalizedUSD || 0).toFixed(2)}`
+                        : `≈ £${(earning.normalizedGBP || 0).toFixed(2)}`
                       }
                     </div>
                   </div>
