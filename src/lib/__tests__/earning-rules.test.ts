@@ -7,6 +7,7 @@ import {
   sumCountable,
   realizedHourlyRate,
   importChanges,
+  occurrenceIndexes,
 } from "../earning-rules"
 
 const e = (o: Partial<Parameters<typeof isCountable>[0]> & Record<string, unknown>) => ({
@@ -85,4 +86,19 @@ test("a newly added bonus is picked up on re-import", () => {
   const changes = importChanges(existing, { ...existing, bonus: 1, totalEarning: 3, normalizedGBP: 3, normalizedUSD: 4, hourlyRate: null, durationMinutes: null })
   assert.equal(changes?.bonus, 1)
   assert.equal(changes?.totalEarning, 3)
+})
+
+// Regression: a real Prolific export contained two identical rows (same study
+// returned twice, no start time). They were merged into one, so the tracker
+// showed 639 submissions instead of 640.
+test("identical rows in one file get distinct occurrence indexes", () => {
+  const rows = [
+    { title: "VR Study", started: null },
+    { title: "Other", started: "2026-11-01" },
+    { title: "VR Study", started: null },
+    { title: "VR Study", started: "2026-11-02" },
+    { title: "VR Study", started: null },
+  ]
+  const key = (r: (typeof rows)[number]) => `${r.title}|${r.started ?? ""}`
+  assert.deepEqual(occurrenceIndexes(rows, key), [0, 0, 1, 0, 2])
 })

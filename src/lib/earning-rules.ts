@@ -128,3 +128,20 @@ export function importChanges(existing: ImportedFields, parsed: ParsedImport): P
 function round2(n: number): number {
   return Math.round(n * 100) / 100
 }
+
+/**
+ * For each row, how many earlier rows in the same file share its key (0 for
+ * the first copy, 1 for the second, ...). Prolific exports can contain truly
+ * identical rows (e.g. a study returned twice before it was started), so the
+ * n-th copy in a file is matched to the n-th stored copy instead of all
+ * copies collapsing into one.
+ */
+export function occurrenceIndexes<T>(rows: T[], key: (row: T) => string): number[] {
+  const seen = new Map<string, number>()
+  return rows.map((row) => {
+    const k = key(row)
+    const n = seen.get(k) ?? 0
+    seen.set(k, n + 1)
+    return n
+  })
+}

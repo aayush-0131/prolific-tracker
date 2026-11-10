@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { parseProlificCSV } from "@/lib/csv-parser"
 import { fetchLiveRates } from "@/lib/currency"
-import { importChanges } from "@/lib/earning-rules"
+import { importChanges, occurrenceIndexes } from "@/lib/earning-rules"
 
 // POST /api/upload - Upload and parse CSV file
 // POST /api/upload - Upload and parse CSV file
@@ -73,15 +73,25 @@ export async function POST(req: NextRequest) {
     let errorCount = 0
     const errors: string[] = []
 
-    for (const earning of parseResult.data) {
+    // Identical rows (same study + start time) are matched by position: the
+    // n-th copy in this file corresponds to the n-th copy already stored.
+    const occurrence = occurrenceIndexes(
+      parseResult.data,
+      (e) => `${e.studyTitle}\u0000${e.startedAt?.toISOString() ?? ""}`
+    )
+
+    for (const [index, earning] of parseResult.data.entries()) {
       try {
-        // Check for duplicate (by startedAt + studyTitle)
-        const existing = await prisma.earning.findFirst({
+        // Check for duplicate (by startedAt + studyTitle, n-th copy)
+        const [existing] = await prisma.earning.findMany({
           where: {
             userId: session.user.id,
             startedAt: earning.startedAt,
             studyTitle: earning.studyTitle,
           },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          skip: occurrence[index],
+          take: 1,
         })
 
         if (existing) {
