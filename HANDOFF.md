@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~12:50 UTC by Claude Code (cloud session)  ·  Branch: fix/recent-earnings (PR #6)
+Last updated: 2026-11-10 ~13:10 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -11,30 +11,27 @@ Stay free for ~1 month, then decide on freemium.
   Insights page). Verified on production after the final deploy: Playwright workflow suite
   12/12 passed; test-CSV suite 26/26 passed (numbers hand-computed from the CSV rows).
 - PR #5 merged (identical CSV rows kept, 639→640). Verified locally with a real 640-row export
-  (fresh upload 640, re-upload 0 new, old-style account heals +1). Vercel production build
-  status = success. Live behaviour NOT re-checked after this deploy (see In progress).
-- Recent Earnings fix committed (branch fix/recent-earnings, PR #6): NULL start times sorted
-  last + `?earned=true` filter. Verified: `npm test` 20/20, `tsc --noEmit` clean, eslint clean,
-  local production build with the real export shows the latest approved studies first.
+  (fresh upload 640, re-upload 0 new, old-style account heals +1). Production: workflow suite
+  12/12 after deploy. The 640 heal itself was not re-run on production (owner can re-upload).
+- PR #6 merged (Recent Earnings: NULL start times sorted last + `?earned=true`). Verified:
+  `npm test` 20/20, tsc + eslint clean, local build with the real export, and on production
+  after deploy the widget lists the latest Approved studies; workflow suite 12/12 passed.
 - Security audit (cloudflare/security-audit-skill, quick profile, budget 16 agents):
   Phase 1 reconnaissance done — 4 of 16 agents spent; reports returned (not yet written to files).
 
 ## In progress
-- PR #6: waiting for Vercel preview build, then merge (owner approved deploying this fix),
-  then re-check production (Recent Earnings + workflow suite; also covers PR #5).
 - Security audit Phase 1 wrap-up: write architecture.md + coverage-ledger.json to
   ~/audits/my-project (container-local, outside the repo; NOT durable across sessions).
   Sandbox runner must be hardened first: recon found it runs as root (needs privilege drop,
   fail-closed read-only check, size-limited scratch). Until then: source-only review.
 
 ## Next steps (ordered)
-1. Merge PR #6 after preview passes; verify production.
-2. Harden sandbox; seed ledger; run hunter wave (~5 agents), critic, verifiers; validate
+1. Harden sandbox; seed ledger; run hunter wave (~5 agents), critic, verifiers; validate
    with the skill's validators; write REPORT.md / FINDINGS-DETAIL.md / NEEDS-VALIDATION.md.
-3. Fix confirmed security findings in separate PRs (ask before merging).
-4. SEO/AEO: llms.txt, FAQ + FAQPage JSON-LD, Open Graph image (layout references a missing
+2. Fix confirmed security findings in separate PRs (ask before merging).
+3. SEO/AEO (this branch, feat/seo-aeo): llms.txt, FAQ + FAQPage JSON-LD, Open Graph image (layout references a missing
    og-image.png), central site-name/URL config to make a rename cheap.
-5. Mobile check of every page on production (Insights already verified: no overflow).
+4. Mobile check of every page on production (Insights already verified: no overflow).
 
 ## Decisions & why
 - Login stays for now; "try with demo data" first, local-only guest mode later (owner undecided).
