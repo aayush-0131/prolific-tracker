@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~13:50 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
+Last updated: 2026-11-10 ~14:05 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -25,8 +25,9 @@ Stay free for ~1 month, then decide on freemium.
   file-size cap holds, target unit tests 19/19 inside the sandbox.
 
 ## In progress
-- Security audit Phase 2: building hunter prompts (verbatim skill blocks) and launching
-  5 hunters. Audit files live in ~/audits/my-project (container-local, outside the repo;
+- Security audit Phase 2: 5 hunters launched (9 of 16 agents spent); prompts built from
+  verbatim skill blocks (tools/build_prompts.py), ledger units marked in_progress.
+- SEO/AEO on this branch (feat/seo-aeo): reviewing metadata, robots, sitemap, landing page. Audit files live in ~/audits/my-project (container-local, outside the repo;
   NOT durable across sessions). Local Postgres/next server stay stopped meanwhile.
 
 ## Next steps (ordered)
