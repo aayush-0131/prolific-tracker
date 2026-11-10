@@ -33,8 +33,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect to dashboard if logged in user tries to access auth pages
-  if ((pathname === "/login" || pathname === "/register") && token) {
+  // Redirect to dashboard if a logged in user opens the landing or auth pages.
+  // Doing this here (not in the page) lets the landing page be fully
+  // server-rendered for search engines and link previews.
+  if ((pathname === "/" || pathname === "/login" || pathname === "/register") && token) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
