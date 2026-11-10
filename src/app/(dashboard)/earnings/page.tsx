@@ -14,6 +14,7 @@ import { getStatusColor, getStatusDisplay } from "@/lib/earnings-calculator"
 import { Search, Trash2, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
+import { sumCountable, type Currency } from "@/lib/earning-rules"
 
 interface Earning {
   id: string
@@ -24,6 +25,7 @@ interface Earning {
   normalizedGBP: number
   normalizedUSD: number
   rewardCurrency: string
+  bonusCurrency: string | null
   status: string
   startedAt: string | null
   completedAt: string | null
@@ -35,6 +37,7 @@ type SortDirection = "asc" | "desc"
 
 export default function EarningsPage() {
   const [earnings, setEarnings] = useState<Earning[]>([])
+  const [currency, setCurrency] = useState<Currency>("GBP")
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -52,6 +55,7 @@ export default function EarningsPage() {
       if (!response.ok) throw new Error("Failed to fetch")
       const data = await response.json()
       setEarnings(data.earnings || []) // ✅ FIX: Extract earnings array
+      setCurrency(data.currency === "USD" ? "USD" : "GBP")
     } catch (error) {
       toast.error("Failed to load earnings")
     } finally {
@@ -178,9 +182,7 @@ export default function EarningsPage() {
       return sortDirection === "asc" ? comparison : -comparison
     })
 
-  const totalEarnings = filteredEarnings
-    .filter((e) => e.status === "APPROVED" || e.status === "SCREENED OUT")
-    .reduce((sum, e) => sum + e.normalizedGBP, 0)
+  const totalEarnings = sumCountable(filteredEarnings, currency)
 
   const SortButton = ({ field, label }: { field: SortField; label: string }) => (
     <Button
@@ -298,7 +300,7 @@ export default function EarningsPage() {
               )}
             </div>
             <span className="text-lg font-semibold">
-              Total: {formatCurrency(totalEarnings, "GBP")}
+              Total: {formatCurrency(totalEarnings, currency)}
             </span>
           </div>
         </CardContent>
@@ -374,7 +376,7 @@ export default function EarningsPage() {
                       </p>
                       {earning.bonus > 0 && (
                         <p className="text-xs text-green-600">
-                          +{formatCurrency(earning.bonus, earning.rewardCurrency)} bonus
+                          incl. {formatCurrency(earning.bonus, earning.bonusCurrency || earning.rewardCurrency)} bonus
                         </p>
                       )}
                     </div>

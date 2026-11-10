@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { startOfDay, startOfWeek, startOfMonth, format } from "date-fns"
+import { isCountable, paidCurrency, sumCountable, realizedHourlyRate, type Currency } from "@/lib/earning-rules"
 
 // GET /api/analytics - Get dashboard analytics
 export async function GET(req: NextRequest) {
@@ -45,44 +46,28 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    // ✅ Statuses that count as "earned" (matches Prolific)
-    const COUNTABLE_STATUSES = ["APPROVED", "SCREENED OUT"]
-
-    // ✅ OPTION C: Calculate BOTH native currency totals AND combined totals
-    const calculateSummary = (earnings: any[]) => {
+    // What counts as earned money (approved, screened out, and paid bonuses on
+    // returned/rejected/timed-out submissions) lives in lib/earning-rules.
+    const calculateSummary = (earnings: typeof allEarnings) => {
       const approved = earnings.filter(e => e.status === "APPROVED")
       const pending = earnings.filter(e => e.status === "AWAITING REVIEW")
-      const screenedOut = earnings.filter(e => e.status === "SCREENED OUT")
 
-      // 🔥 FIX: Native currency totals (matches Prolific exactly)
+      // Native currency totals (matches Prolific): money in the currency it was paid in
       let nativeGBP = 0
       let nativeUSD = 0
 
-      earnings.forEach(e => {
-        if (COUNTABLE_STATUSES.includes(e.status)) {
-          // 🔥 FIX: For SCREENED OUT, use bonusCurrency instead of rewardCurrency
-          const earningCurrency = e.status === "SCREENED OUT"
-            ? (e.bonusCurrency || e.rewardCurrency)
-            : e.rewardCurrency
-
-          if (earningCurrency === "GBP") {
-            nativeGBP += e.totalEarning || 0
-          } else if (earningCurrency === "USD") {
-            nativeUSD += e.totalEarning || 0
-          }
+      earnings.filter(isCountable).forEach(e => {
+        const currency = paidCurrency(e)
+        if (currency === "GBP") {
+          nativeGBP += e.totalEarning || 0
+        } else if (currency === "USD") {
+          nativeUSD += e.totalEarning || 0
         }
       })
 
-      // 🔥 Combined totals (all earnings converted to single currency)
-      const combinedGBP = earnings
-        .filter(e => COUNTABLE_STATUSES.includes(e.status))
-        .map(e => e.normalizedGBP || 0)
-        .reduce((sum, val) => sum + val, 0)
-
-      const combinedUSD = earnings
-        .filter(e => COUNTABLE_STATUSES.includes(e.status))
-        .map(e => e.normalizedUSD || 0)
-        .reduce((sum, val) => sum + val, 0)
+      // Combined totals (all earned money converted to a single currency)
+      const combinedGBP = sumCountable(earnings, "GBP")
+      const combinedUSD = sumCountable(earnings, "USD")
 
       // Approved only (for reference)
       const approvedGBP = approved
@@ -148,7 +133,7 @@ export async function GET(req: NextRequest) {
       let amountGBP = 0
       let amountUSD = 0
 
-      if (COUNTABLE_STATUSES.includes(earning.status)) {
+      if (isCountable(earning)) {
         amountGBP = earning.normalizedGBP || 0
         amountUSD = earning.normalizedUSD || 0
       }
@@ -187,11 +172,9 @@ export async function GET(req: NextRequest) {
       percentage: totalEarnings > 0 ? (data.count / totalEarnings) * 100 : 0,
     }))
 
-    // Average hourly rate
-    const earningsWithRate = allEarnings.filter(e => e.hourlyRate !== null && e.hourlyRate > 0)
-    const averageHourlyRate = earningsWithRate.length > 0
-      ? earningsWithRate.reduce((sum, e) => sum + (e.hourlyRate || 0), 0) / earningsWithRate.length
-      : 0
+    // Hourly rate: total earned / total time, in the user's currency
+    const userCurrency: Currency = user.currency === "USD" ? "USD" : "GBP"
+    const averageHourlyRate = realizedHourlyRate(allEarnings, userCurrency)
 
     // Average study duration
     const earningsWithDuration = allEarnings.filter(e => e.durationMinutes !== null && e.durationMinutes > 0)
@@ -205,6 +188,7 @@ export async function GET(req: NextRequest) {
       earningsUSD: week.combinedUSD,
       goal: parseFloat((user.weeklyGoal || 0).toString()),
       currency: user.currency,
+      fiscalYearStart: user.fiscalYearStart,
       studyCount: week.count,
     }
 

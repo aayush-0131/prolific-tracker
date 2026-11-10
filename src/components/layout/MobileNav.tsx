@@ -9,6 +9,7 @@ import {
   Upload,
   PlusCircle,
   BarChart3,
+  Lightbulb,
   Settings,
   List,
   X,
@@ -22,6 +23,7 @@ const navigation = [
   { name: "Upload CSV", href: "/upload", icon: Upload },
   { name: "Add Entry", href: "/add", icon: PlusCircle },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Insights", href: "/insights", icon: Lightbulb },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 

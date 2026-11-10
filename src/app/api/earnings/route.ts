@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { fetchLiveRates, normalizeToGBP, normalizeToUSD } from "@/lib/currency"
 
 // GET /api/earnings - Get all earnings for logged-in user
 export async function GET(req: NextRequest) {
@@ -135,7 +136,16 @@ export async function GET(req: NextRequest) {
       take: limit ? parseInt(limit) : undefined,
     })
 
-    return NextResponse.json({ earnings })
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { currency: true, fiscalYearStart: true },
+    })
+
+    return NextResponse.json({
+      earnings,
+      currency: user?.currency || "GBP",
+      fiscalYearStart: user?.fiscalYearStart || 1,
+    })
 
   } catch (error) {
     console.error("Get earnings error:", error)
@@ -177,13 +187,16 @@ export async function POST(req: NextRequest) {
     // Calculate total and normalized values
     const totalEarning = validatedData.reward + validatedData.bonus
 
-    // Simple conversion (you can enhance this)
-    const normalizedGBP = validatedData.rewardCurrency === "GBP"
-      ? totalEarning
-      : totalEarning * 0.79
-    const normalizedUSD = validatedData.rewardCurrency === "USD"
-      ? totalEarning
-      : totalEarning * 1.27
+    // Convert with the same live rates CSV imports use; reward and bonus may
+    // be in different currencies.
+    await fetchLiveRates()
+    const bonusCurrency = validatedData.bonusCurrency || validatedData.rewardCurrency
+    const normalizedGBP =
+      normalizeToGBP(validatedData.reward, validatedData.rewardCurrency) +
+      normalizeToGBP(validatedData.bonus, bonusCurrency)
+    const normalizedUSD =
+      normalizeToUSD(validatedData.reward, validatedData.rewardCurrency) +
+      normalizeToUSD(validatedData.bonus, bonusCurrency)
 
     // Calculate duration if both dates provided
     let durationMinutes = null
@@ -206,7 +219,7 @@ export async function POST(req: NextRequest) {
         reward: validatedData.reward,
         rewardCurrency: validatedData.rewardCurrency,
         bonus: validatedData.bonus,
-        bonusCurrency: validatedData.bonusCurrency || validatedData.rewardCurrency,
+        bonusCurrency,
         totalEarning,
         normalizedGBP,
         normalizedUSD,

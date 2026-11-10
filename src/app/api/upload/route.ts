@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { parseProlificCSV } from "@/lib/csv-parser"
 import { fetchLiveRates } from "@/lib/currency"
+import { importChanges } from "@/lib/earning-rules"
 
 // POST /api/upload - Upload and parse CSV file
 // POST /api/upload - Upload and parse CSV file
@@ -67,6 +68,7 @@ export async function POST(req: NextRequest) {
 
     // Import earnings (with duplicate detection)
     let importedCount = 0
+    let updatedCount = 0
     let duplicateCount = 0
     let errorCount = 0
     const errors: string[] = []
@@ -83,7 +85,15 @@ export async function POST(req: NextRequest) {
         })
 
         if (existing) {
-          duplicateCount++
+          // A newer export can change a known submission (e.g. AWAITING REVIEW
+          // -> APPROVED, or a bonus paid later): update it instead of skipping.
+          const changes = importChanges(existing, earning)
+          if (changes) {
+            await prisma.earning.update({ where: { id: existing.id }, data: changes })
+            updatedCount++
+          } else {
+            duplicateCount++
+          }
           continue
         }
 
@@ -125,8 +135,12 @@ export async function POST(req: NextRequest) {
       message = "ℹ️ No new studies to import."
     }
 
+    if (updatedCount > 0) {
+      message += ` 🔄 ${updatedCount} existing ${updatedCount === 1 ? 'study was' : 'studies were'} updated (status or bonus changed).`
+    }
+
     if (duplicateCount > 0) {
-      message += ` ${duplicateCount} ${duplicateCount === 1 ? 'duplicate was' : 'duplicates were'} skipped (already in database).`
+      message += ` ${duplicateCount} unchanged ${duplicateCount === 1 ? 'study was' : 'studies were'} skipped (already in database).`
     }
 
     if (errorCount > 0) {
@@ -139,6 +153,7 @@ export async function POST(req: NextRequest) {
       fileName: file.name,
       recordCount: parseResult.summary.totalRows,
       importedCount,
+      updatedCount,
       duplicateCount,
       errorCount,
       errors,

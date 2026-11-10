@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns"
 import { toast } from "sonner"
+import { amountIn, isCountable, paidCurrency, type Currency } from "@/lib/earning-rules"
 
 interface DailyEarning {
   date: string
@@ -18,6 +19,7 @@ interface DailyEarning {
     id: string
     studyTitle: string
     totalEarning: number
+    currency: string
     status: string
   }>
 }
@@ -25,6 +27,8 @@ interface DailyEarning {
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [earnings, setEarnings] = useState<any[]>([])
+  // Daily totals are shown in the user's preferred currency
+  const [currency, setCurrency] = useState<Currency>("GBP")
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
@@ -38,6 +42,7 @@ export default function CalendarPage() {
       if (!response.ok) throw new Error("Failed to fetch")
       const data = await response.json()
       setEarnings(data.earnings || []) // ✅ FIX: Extract earnings array
+      setCurrency(data.currency === "USD" ? "USD" : "GBP")
     } catch (error) {
       toast.error("Failed to load earnings")
     } finally {
@@ -60,10 +65,9 @@ export default function CalendarPage() {
       }
     }
 
-    const shouldCount = ["APPROVED", "SCREENED OUT"].includes(earning.status)
-
-    if (shouldCount) {
-      acc[dateKey].amount += earning.totalEarning
+    // Sum converted amounts so £ and $ studies are never added together
+    if (isCountable(earning)) {
+      acc[dateKey].amount += amountIn(earning, currency)
     }
 
     acc[dateKey].count += 1
@@ -71,6 +75,7 @@ export default function CalendarPage() {
       id: earning.id,
       studyTitle: earning.studyTitle,
       totalEarning: earning.totalEarning,
+      currency: paidCurrency(earning),
       status: earning.status
     })
 
@@ -177,7 +182,7 @@ export default function CalendarPage() {
                     {dayData && (
                       <div className="mt-1">
                         <div className="text-xs font-semibold text-green-600">
-                          {formatCurrency(dayData.amount, "GBP")}
+                          {formatCurrency(dayData.amount, currency)}
                         </div>
                         <div className="text-xs text-gray-500">
                           {dayData.count} {dayData.count === 1 ? "study" : "studies"}
@@ -204,7 +209,7 @@ export default function CalendarPage() {
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <span className="text-muted-foreground">Total for this day:</span>
                   <span className="text-2xl font-bold">
-                    {formatCurrency(selectedDateData.amount, "GBP")}
+                    {formatCurrency(selectedDateData.amount, currency)}
                   </span>
                 </div>
 
@@ -222,7 +227,7 @@ export default function CalendarPage() {
                         </Badge>
                       </div>
                       <span className="font-semibold ml-4">
-                        {formatCurrency(study.totalEarning, "GBP")}
+                        {formatCurrency(study.totalEarning, study.currency)}
                       </span>
                     </div>
                   ))}
