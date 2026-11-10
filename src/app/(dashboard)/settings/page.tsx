@@ -14,6 +14,7 @@ import { KofiButton } from "@/components/ui/kofi-button"
 import { getInitials } from "@/lib/utils"
 import { LogOut, Download, Loader2, Save, Target } from "lucide-react"
 import { toast } from "sonner"
+import Papa from "papaparse"
 
 export default function SettingsPage() {
   const { data: session } = useSession()
@@ -198,28 +199,45 @@ export default function SettingsPage() {
       const response = await fetch("/api/earnings")
       if (!response.ok) throw new Error("Failed to fetch")
       const data = await response.json()
+      const earnings: any[] = data.earnings || []
 
-      const csv = [
-        ["Study", "Reward", "Bonus", "Currency", "Status", "Started At", "Completed At"],
-        ...data.map((e: any) => [
-          `"${e.studyTitle}"`,
-          e.reward,
-          e.bonus,
-          e.rewardCurrency,
-          e.status,
+      const money = (amount: number, currency: string) =>
+        `${currency === "USD" ? "$" : "£"}${(amount || 0).toFixed(2)}`
+
+      // The first seven columns match the Prolific export format, so this
+      // file can be re-uploaded on the Upload page.
+      const csv = Papa.unparse({
+        fields: [
+          "Study", "Reward", "Bonus", "Started At", "Completed At", "Completion Code", "Status",
+          "Earned", "Earned (GBP)", "Earned (USD)", "Source", "Notes",
+        ],
+        data: earnings.map((e) => [
+          e.studyTitle,
+          money(e.reward, e.rewardCurrency),
+          money(e.bonus, e.bonusCurrency || e.rewardCurrency),
           e.startedAt || "",
-          e.completedAt || ""
-        ])
-      ].map(row => row.join(",")).join("\n")
+          e.completedAt || "",
+          e.completionCode || "",
+          e.status,
+          (e.totalEarning || 0).toFixed(2),
+          (e.normalizedGBP || 0).toFixed(2),
+          (e.normalizedUSD || 0).toFixed(2),
+          e.source,
+          e.notes || "",
+        ]),
+      })
 
-      const blob = new Blob([csv], { type: "text/csv" })
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
       a.download = `prolific-earnings-${new Date().toISOString().split("T")[0]}.csv`
+      document.body.appendChild(a)
       a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
 
-      toast.success("Data exported successfully!")
+      toast.success(`Exported ${earnings.length} ${earnings.length === 1 ? "study" : "studies"}`)
     } catch (error) {
       toast.error("Failed to export data")
     }
