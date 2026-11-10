@@ -8,6 +8,7 @@ import {
   realizedHourlyRate,
   importChanges,
   occurrenceIndexes,
+  earnedWhere,
 } from "../earning-rules"
 
 const e = (o: Partial<Parameters<typeof isCountable>[0]> & Record<string, unknown>) => ({
@@ -101,4 +102,20 @@ test("identical rows in one file get distinct occurrence indexes", () => {
   ]
   const key = (r: (typeof rows)[number]) => `${r.title}|${r.started ?? ""}`
   assert.deepEqual(occurrenceIndexes(rows, key), [0, 0, 1, 0, 2])
+})
+
+// The database filter used by "Recent Earnings" must select exactly the rows
+// isCountable() treats as earned, so the dashboard and the totals agree.
+test("earnedWhere() selects exactly the rows isCountable() counts", () => {
+  type W = { OR: Array<{ status: { in: string[] }; totalEarning?: { gt: number } }> }
+  const where = earnedWhere() as W
+  const matches = (row: { status: string; totalEarning: number | null }) =>
+    where.OR.some((c) => c.status.in.includes(row.status) && (!c.totalEarning || (row.totalEarning ?? 0) > c.totalEarning.gt))
+  const statuses = ["APPROVED", "SCREENED OUT", "RETURNED", "REJECTED", "TIMED-OUT", "AWAITING REVIEW", "UNKNOWN"]
+  for (const status of statuses) {
+    for (const totalEarning of [0, 0.5]) {
+      const row = e({ status, totalEarning })
+      assert.equal(matches(row), isCountable(row), `${status} / ${totalEarning}`)
+    }
+  }
 })

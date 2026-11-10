@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { fetchLiveRates, normalizeToGBP, normalizeToUSD } from "@/lib/currency"
+import { earnedWhere } from "@/lib/earning-rules"
 
 // GET /api/earnings - Get all earnings for logged-in user
 export async function GET(req: NextRequest) {
@@ -118,6 +119,11 @@ export async function GET(req: NextRequest) {
       where.status = status
     }
 
+    // ?earned=true: only submissions that actually paid (see lib/earning-rules)
+    if (searchParams.get("earned") === "true") {
+      Object.assign(where, earnedWhere())
+    }
+
     if (startDate || endDate) {
       where.startedAt = {}
       if (startDate) {
@@ -130,9 +136,9 @@ export async function GET(req: NextRequest) {
 
     const earnings = await prisma.earning.findMany({
       where,
-      orderBy: {
-        startedAt: "desc",
-      },
+      // Postgres sorts NULLs first in DESC order; returned submissions with no
+      // start time would otherwise crowd the top of every "latest" list.
+      orderBy: [{ startedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
       take: limit ? parseInt(limit) : undefined,
     })
 

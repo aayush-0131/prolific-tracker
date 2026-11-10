@@ -10,6 +10,7 @@ import { getRelativeTime } from "@/lib/date-utils"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
+import { paidCurrency } from "@/lib/earning-rules"
 
 interface Earning {
   id: string
@@ -18,6 +19,7 @@ interface Earning {
   normalizedGBP: number
   normalizedUSD: number
   rewardCurrency: string
+  bonusCurrency: string | null
   status: string
   startedAt: string | null
   createdAt: string
@@ -30,7 +32,7 @@ export default function RecentEarnings() {
   useEffect(() => {
     const fetchEarnings = async () => {
       try {
-        const response = await fetch("/api/earnings?limit=5")
+        const response = await fetch("/api/earnings?limit=5&earned=true")
         if (!response.ok) throw new Error("Failed to fetch")
         const data = await response.json()
         setEarnings(data.earnings || [])
@@ -60,7 +62,7 @@ export default function RecentEarnings() {
       <Card>
         <CardHeader>
           <CardTitle>Recent Earnings</CardTitle>
-          <CardDescription>Your latest study completions</CardDescription>
+          <CardDescription>Your latest paid studies</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -79,7 +81,7 @@ export default function RecentEarnings() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Recent Earnings</CardTitle>
-            <CardDescription>Your latest study completions</CardDescription>
+            <CardDescription>Your latest paid studies</CardDescription>
           </div>
           <Link href="/earnings">
             <Button variant="ghost" size="sm">
@@ -92,7 +94,7 @@ export default function RecentEarnings() {
       <CardContent>
         {earnings.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No earnings yet. Upload your Prolific CSV or add a manual entry to get started!
+            No paid studies yet. Upload your Prolific CSV or add a manual entry to get started!
           </div>
         ) : (
           <div className="space-y-4">
@@ -114,17 +116,16 @@ export default function RecentEarnings() {
                     {getStatusDisplay(earning.status)}
                   </Badge>
                   <div className="text-right">
+                    {/* Amount in the currency it was paid in, with the converted value below */}
                     <div className="font-semibold text-sm">
-                      {earning.rewardCurrency === "GBP"
-                        ? `£${(earning.totalEarning || 0).toFixed(2)}`
-                        : `$${(earning.totalEarning || 0).toFixed(2)}`
-                      }
+                      {paidCurrency(earning) === "USD"
+                        ? `$${(earning.totalEarning || 0).toFixed(2)}`
+                        : `£${(earning.totalEarning || 0).toFixed(2)}`}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {earning.rewardCurrency === "GBP"
-                        ? `≈ $${(earning.normalizedUSD || 0).toFixed(2)}`
-                        : `≈ £${(earning.normalizedGBP || 0).toFixed(2)}`
-                      }
+                      {paidCurrency(earning) === "USD"
+                        ? `≈ £${(earning.normalizedGBP || 0).toFixed(2)}`
+                        : `≈ $${(earning.normalizedUSD || 0).toFixed(2)}`}
                     </div>
                   </div>
                 </div>
