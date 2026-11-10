@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~13:10 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
+Last updated: 2026-11-10 ~13:35 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -18,15 +18,18 @@ Stay free for ~1 month, then decide on freemium.
   after deploy the widget lists the latest Approved studies; workflow suite 12/12 passed.
 - Security audit (cloudflare/security-audit-skill, quick profile, budget 16 agents):
   Phase 1 reconnaissance done — 4 of 16 agents spent; reports returned (not yet written to files).
+- Audit sandbox hardened (tools in ~/audits/my-project/tools). Verified by an in-sandbox
+  self-test: runs as nobody with no capabilities, read-only mounts verified (fails closed),
+  no external network/DNS, host sockets hidden, cgroup memory cap kills a memory hog,
+  file-size cap holds, target unit tests 19/19 inside the sandbox.
 
 ## In progress
 - Security audit Phase 1 wrap-up: write architecture.md + coverage-ledger.json to
   ~/audits/my-project (container-local, outside the repo; NOT durable across sessions).
-  Sandbox runner must be hardened first: recon found it runs as root (needs privilege drop,
-  fail-closed read-only check, size-limited scratch). Until then: source-only review.
+  Local Postgres/next server stay stopped while sandboxed checks run.
 
 ## Next steps (ordered)
-1. Harden sandbox; seed ledger; run hunter wave (~5 agents), critic, verifiers; validate
+1. Seed ledger; run hunter wave (~5 agents), critic, verifiers; validate
    with the skill's validators; write REPORT.md / FINDINGS-DETAIL.md / NEEDS-VALIDATION.md.
 2. Fix confirmed security findings in separate PRs (ask before merging).
 3. SEO/AEO (this branch, feat/seo-aeo): llms.txt, FAQ + FAQPage JSON-LD, Open Graph image (layout references a missing
