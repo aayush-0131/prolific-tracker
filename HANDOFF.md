@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~18:30 UTC by Claude Code (cloud session)  ·  Branch: feat/demo-mode
+Last updated: 2026-11-10 ~19:00 UTC by Claude Code (cloud session)  ·  Branch: feat/demo-mode
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -46,8 +46,10 @@ Stay free for ~1 month, then decide on freemium.
   errors; mobile menu opens with all 8 links and navigates.
 
 ## In progress
-- Demo mode on feat/demo-mode: public /demo page showing the dashboard + Insights with
-  generated sample data (no login, no DB), "Try the demo" button on the landing page.
+- Demo mode PR (feat/demo-mode): public /demo with generated sample data. Verified locally:
+  npm test 28/28, tsc + eslint clean; /demo via landing "Try the Demo" on desktop and phone
+  (0px overflow, no page errors, server HTML has intro + canonical); /insights unchanged after
+  the InsightsView refactor. Then: CI + preview, merge, production check.
 
 ## Next steps (ordered)
 1. Local-only guest mode (after demo mode ships).
