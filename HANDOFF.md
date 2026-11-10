@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~19:00 UTC by Claude Code (cloud session)  ·  Branch: feat/demo-mode
+Last updated: 2026-11-10 ~19:20 UTC by Claude Code (cloud session)  ·  Branch: main (all work merged)
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -28,6 +28,9 @@ Stay free for ~1 month, then decide on freemium.
   password change doesn't invalidate JWT sessions; unbounded CSV upload work.
 - SEO/AEO PR #7 merged; production verified: home HTML has H1, FAQ, FAQPage + WebApplication
   JSON-LD, no spinner; /opengraph-image and /llms.txt served.
+- Demo mode PR #10 merged: public /demo with generated sample data. Production verified on
+  desktop and iPhone 13 (0px overflow, no page errors); final production workflow suite 11/12
+  (the one 'fail' is leftover duplicate rows in the probe account, i.e. duplicate detection working).
 - Session revocation PR #9 merged (audit finding fixed). Production verified with a two-device
   test: after a password change the other device gets 401, empty session, cookie cleared;
   old password rejected, new works. CI (npm test) and Vercel preview passed. Verified on a local production build: home HTML
@@ -46,10 +49,7 @@ Stay free for ~1 month, then decide on freemium.
   errors; mobile menu opens with all 8 links and navigates.
 
 ## In progress
-- Demo mode PR (feat/demo-mode): public /demo with generated sample data. Verified locally:
-  npm test 28/28, tsc + eslint clean; /demo via landing "Try the Demo" on desktop and phone
-  (0px overflow, no page errors, server HTML has intro + canonical); /insights unchanged after
-  the InsightsView refactor. Then: CI + preview, merge, production check.
+- Nothing. Site is ready for the owner's small-group share.
 
 ## Next steps (ordered)
 1. Local-only guest mode (after demo mode ships).
