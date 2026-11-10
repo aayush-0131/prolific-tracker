@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~19:20 UTC by Claude Code (cloud session)  ·  Branch: main (all work merged)
+Last updated: 2026-11-10 ~19:20 UTC by Claude Code (cloud session)  ·  Branch: fix/mobile-csv-upload
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -49,7 +49,10 @@ Stay free for ~1 month, then decide on freemium.
   errors; mobile menu opens with all 8 links and navigates.
 
 ## In progress
-- Nothing. Site is ready for the owner's small-group share.
+- Phone CSV upload fails (reported by a tester). Reproduced on production in Pixel 7 / iPhone 13
+  emulation: valid Prolific CSV rejected when named *.CSV, without extension, or *.csv.txt
+  (client + server check the filename). Also accept=".csv" can grey files out in Android's
+  picker. Fix: validate by header content, broaden accept, 5 MB size cap.
 
 ## Next steps (ordered)
 1. Local-only guest mode (after demo mode ships).
