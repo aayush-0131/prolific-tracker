@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~15:05 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
+Last updated: 2026-11-10 ~17:25 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -38,9 +38,9 @@ Stay free for ~1 month, then decide on freemium.
   errors; mobile menu opens with all 8 links and navigates.
 
 ## In progress
-- Audit Phase 3: 2 independent verifiers running (one per candidate).
+- Audit Phase 3: 2 independent verifiers running (one per candidate); resumed after a usage-limit stop.
   Audit files live in ~/audits/my-project (container-local, outside the repo; NOT durable).
-- Opening the SEO/AEO PR from feat/seo-aeo (not merged; owner approval needed).
+- SEO/AEO PR #7 open from feat/seo-aeo (not merged; owner approval needed).
 
 ## Next steps (ordered)
 1. Verifier results -> findings.json; run both validators; write REPORT.md /
