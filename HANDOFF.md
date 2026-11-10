@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~17:25 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
+Last updated: 2026-11-10 ~17:35 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -31,6 +31,10 @@ Stay free for ~1 month, then decide on freemium.
   JSON-LD in server HTML, per-route canonicals for /, /login, /register; app pages noindex;
   signed-in / /login /register -> 307 /dashboard; robots.txt, sitemap, /llms.txt, 1200x630
   OG image and apple-icon all served. tsc + eslint clean.
+- Security audit COMPLETE (12/16 agents): findings.json + ledger pass both skill validators;
+  1 confirmed medium (password change doesn't invalidate JWT sessions — reproduced in the
+  sandbox with real authOptions), 1 needs_validation (unbounded CSV upload), 3 deferred units.
+  Reports: ~/audits/my-project (container-local) + copies sent to owner.
 - Audit final coverage critic done: 3 gaps (Google OAuth linking, login/register brute-force
   limits, Host-header/private-response caching) recorded as deferred units (quick profile
   allows no second wave). Ledger 13 units, validator PASS. 12 of 16 agents spent.
@@ -38,15 +42,15 @@ Stay free for ~1 month, then decide on freemium.
   errors; mobile menu opens with all 8 links and navigates.
 
 ## In progress
-- Audit Phase 3: 2 independent verifiers running (one per candidate); resumed after a usage-limit stop.
-  Audit files live in ~/audits/my-project (container-local, outside the repo; NOT durable).
-- SEO/AEO PR #7 open from feat/seo-aeo (not merged; owner approval needed).
+- Nothing running. Waiting on owner: merge PR #7 (SEO/AEO); go-ahead for security fixes.
 
 ## Next steps (ordered)
-1. Verifier results -> findings.json; run both validators; write REPORT.md /
-   FINDINGS-DETAIL.md / NEEDS-VALIDATION.md; copy reports somewhere durable for the owner.
-2. Fix confirmed security findings in separate PRs (ask before merging).
+1. Fix the confirmed audit finding (sessions survive password change): add
+   User.sessionVersion + migration, check it in the jwt callback; regression test (new PR).
+2. Hardening PR: security headers, upload size/row caps, validate exchange-rate response,
+   remove /api/test-rates and ?debug=native, bound `limit` and bulk ids.
 3. Owner: Google Search Console (HTML-tag method via NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION).
+4. Optional standard-profile audit of the 3 deferred units.
 
 ## Decisions & why
 - Login stays for now; "try with demo data" first, local-only guest mode later (owner undecided).
