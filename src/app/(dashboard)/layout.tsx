@@ -1,5 +1,11 @@
+import type { Metadata } from "next"
 import Sidebar from "@/components/layout/Sidebar"
 import Navbar from "@/components/layout/Navbar"
+
+// Signed-in app pages are private: keep them out of search results.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default function DashboardLayout({
   children,

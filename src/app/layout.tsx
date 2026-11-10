@@ -1,101 +1,62 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import Script from "next/script"
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 import AuthProvider from "@/components/providers/AuthProvider"
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { FEATURES, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  // 🔥 Core SEO
   title: {
-    default: "Prolific Tracker - Free Earnings Tracker for Prolific Researchers",
-    template: "%s | Prolific Tracker",
+    default: `${SITE_NAME} - Free Earnings Tracker for Prolific Participants`,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: "Free earnings tracker for Prolific researchers. Upload your CSV, view dual-currency analytics (GBP & USD), track weekly goals, and see beautiful charts. No spreadsheets needed!",
+  description: SITE_DESCRIPTION,
   keywords: [
     "prolific",
-    "prolific tracker",
-    "prolific earnings",
     "prolific earnings tracker",
-    "research study tracker",
+    "prolific participant",
+    "prolific hourly rate",
     "prolific csv",
-    "prolific analytics",
-    "hourly rate calculator",
+    "prolific submissions export",
+    "prolific earnings calculator",
+    "prolific tax",
+    "survey earnings tracker",
     "beermoney tracker",
-    "survey earnings",
-    "prolific studies",
   ],
-  authors: [{ name: "Prolific Tracker" }],
-  creator: "Prolific Tracker",
-  publisher: "Prolific Tracker",
-
-  // 🔥 Base URL for all relative URLs
-  metadataBase: new URL("https://prolific-tracker-alpha.vercel.app"),
-
-  // 🔥 Open Graph (Facebook, LinkedIn, Discord previews)
+  applicationName: SITE_NAME,
+  category: "Finance",
+  metadataBase: new URL(SITE_URL),
+  // Canonical for "/" only; routes with public pages set their own (see the
+  // (auth)/login and (auth)/register layouts). Private pages are noindex.
+  alternates: { canonical: "/" },
+  // Image comes from src/app/opengraph-image.tsx (Next.js file convention).
   openGraph: {
-    title: "Prolific Tracker - Free Earnings Tracker",
-    description: "Upload your Prolific CSV and instantly see your earnings, hourly rate, and trends. 100% free, no spreadsheets needed!",
-    url: "https://prolific-tracker-alpha.vercel.app",
-    siteName: "Prolific Tracker",
-    locale: "en_US",
+    title: `${SITE_NAME} - ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    siteName: SITE_NAME,
+    locale: "en_GB",
     type: "website",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Prolific Tracker - Track Your Research Earnings",
-      },
-    ],
   },
-
-  // 🔥 Twitter Card
   twitter: {
     card: "summary_large_image",
-    title: "Prolific Tracker - Free Earnings Tracker",
-    description: "Upload your Prolific CSV and instantly see your earnings, hourly rate, and trends. 100% free!",
-    images: ["/og-image.png"],
-    creator: "@prolifictracker",
+    title: `${SITE_NAME} - ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
   },
-
-  // 🔥 Favicon & Icons
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
-
-  // 🔥 Robots
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   },
-
-  // 🔥 Verification (uncomment and add your codes when you have them)
-  // verification: {
-  //   google: "your-google-verification-code",
-  // },
-
-  // 🔥 Alternate languages (if you add multi-language support later)
-  alternates: {
-    canonical: "https://prolific-tracker-alpha.vercel.app",
-  },
-
-  // 🔥 App-specific
-  applicationName: "Prolific Tracker",
-  category: "Finance",
+  // Google Search Console: set NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION in Vercel to
+  // the content value of the HTML-tag verification method.
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } }
+    : {}),
 }
 
 export default function RootLayout({
@@ -148,33 +109,24 @@ export default function RootLayout({
         <SpeedInsights />
 
         {/* 🔥 Structured Data for Google Rich Results */}
-        <Script
+        {/* Plain <script> so the JSON-LD is in the server HTML (next/script injects it client-side). */}
+        <script
           id="structured-data"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebApplication",
-              "name": "Prolific Tracker",
-              "url": "https://prolific-tracker-alpha.vercel.app",
-              "description": "Free earnings tracker for Prolific researchers. Upload CSV, view analytics, track goals.",
-              "applicationCategory": "FinanceApplication",
-              "operatingSystem": "Web",
-              "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "USD"
-              },
-              "featureList": [
-                "CSV Import",
-                "Dual Currency Support (GBP & USD)",
-                "Weekly Goal Tracking",
-                "Calendar View",
-                "Analytics Dashboard",
-                "Hourly Rate Calculator"
-              ],
-              "screenshot": "https://prolific-tracker-alpha.vercel.app/og-image.png"
-            }),
+              name: SITE_NAME,
+              url: SITE_URL,
+              description: SITE_DESCRIPTION,
+              applicationCategory: "FinanceApplication",
+              operatingSystem: "Web",
+              isAccessibleForFree: true,
+              offers: { "@type": "Offer", price: "0", priceCurrency: "GBP" },
+              featureList: FEATURES,
+              image: `${SITE_URL}/opengraph-image`,
+            }).replace(/</g, "\\u003c"),
           }}
         />
       </body>
