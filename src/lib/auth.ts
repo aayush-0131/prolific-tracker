@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { getOAuthProviders } from "@/lib/auth-providers"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { isSessionStillValid, passwordFingerprint } from "@/lib/session-guard"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -70,10 +71,12 @@ export const authOptions: NextAuthOptions = {
             currency: true,
             weeklyGoal: true,
             fiscalYearStart: true,
+            password: true,
           },
         })
 
         if (dbUser) {
+          token.pwf = passwordFingerprint(dbUser.password)
           token.id = dbUser.id
           token.name = dbUser.name
           token.email = dbUser.email
@@ -81,6 +84,19 @@ export const authOptions: NextAuthOptions = {
           token.currency = dbUser.currency
           token.weeklyGoal = dbUser.weeklyGoal
           token.fiscalYearStart = dbUser.fiscalYearStart
+        }
+      }
+
+      // On every later request: reject sessions minted before the last password
+      // change (or for a deleted user). Throwing makes NextAuth return an empty
+      // session and clear the session cookie.
+      if (!user && token.id) {
+        const current = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { password: true },
+        })
+        if (!isSessionStillValid(token.pwf as string | null | undefined, current)) {
+          throw new Error("SESSION_REVOKED")
         }
       }
 

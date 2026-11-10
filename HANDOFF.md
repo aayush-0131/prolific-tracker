@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~17:35 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
+Last updated: 2026-11-10 ~18:10 UTC by Claude Code (cloud session)  ·  Branch: fix/session-revocation
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -26,7 +26,7 @@ Stay free for ~1 month, then decide on freemium.
 - Audit Phase 2 hunter wave done (9 of 16 agents spent): 10/10 ledger units closed — 8 covered,
   2 candidates; ledger re-validated after each result. Candidates (not yet findings):
   password change doesn't invalidate JWT sessions; unbounded CSV upload work.
-- SEO/AEO (branch feat/seo-aeo, not merged). Verified on a local production build: home HTML
+- SEO/AEO PR #7 MERGED (CI test job + Vercel preview passed). Verified on a local production build: home HTML
   now has the H1/content/FAQ (live site serves only a spinner), FAQPage + WebApplication
   JSON-LD in server HTML, per-route canonicals for /, /login, /register; app pages noindex;
   signed-in / /login /register -> 307 /dashboard; robots.txt, sitemap, /llms.txt, 1200x630
@@ -42,18 +42,22 @@ Stay free for ~1 month, then decide on freemium.
   errors; mobile menu opens with all 8 links and navigates.
 
 ## In progress
-- Nothing running. Waiting on owner: merge PR #7 (SEO/AEO); go-ahead for security fixes.
+- PR for fix/session-revocation (audit finding: sessions survive password change). Verified
+  locally: npm test 25/25; two-device test (B changes password -> A gets 401, empty session,
+  cookie cleared; old password rejected, new works); workflow suite 12/12. Then merge + prod check.
+- Next: demo mode ("try with sample data"), owner-approved first step of optional login.
 
 ## Next steps (ordered)
-1. Fix the confirmed audit finding (sessions survive password change): add
-   User.sessionVersion + migration, check it in the jwt callback; regression test (new PR).
+1. Demo mode (/demo with generated sample data, no login), then local-only guest mode later.
 2. Hardening PR: security headers, upload size/row caps, validate exchange-rate response,
    remove /api/test-rates and ?debug=native, bound `limit` and bulk ids.
 3. Owner: Google Search Console (HTML-tag method via NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION).
 4. Optional standard-profile audit of the 3 deferred units.
 
 ## Decisions & why
-- Login stays for now; "try with demo data" first, local-only guest mode later (owner undecided).
+- Optional login: owner approved demo mode first, local-only guest mode later.
+- Name stays "Prolific Tracker" for now (rename = one line in src/lib/site.ts).
+- Session revocation via password-hash fingerprint in the JWT (no DB migration needed).
 - Freemium deferred ~1 month to gather usage data first.
 - Researcher stats (CSV has a "Published By" column) deferred until after sharing.
 - A bonus on a rejected/returned/timed-out row counts as earned (original code's intent).

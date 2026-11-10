@@ -23,13 +23,18 @@ export default function LoginPage() {
   const [googleEnabled, setGoogleEnabled] = useState(false)
   // NextAuth redirects failed OAuth attempts back here with ?error=...
   const [oauthError, setOauthError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   useEffect(() => {
     getProviders()
       .then((providers) => setGoogleEnabled(Boolean(providers?.google)))
       .catch(() => setGoogleEnabled(false))
 
-    const error = new URLSearchParams(window.location.search).get("error")
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("passwordChanged") === "1") {
+      setNotice("Password changed. For your security, all devices were signed out. Sign in with your new password.")
+    }
+    const error = params.get("error")
     if (error && error !== "CredentialsSignin") {
       setOauthError(
         error === "OAuthAccountNotLinked"
@@ -89,6 +94,11 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {notice && (
+            <Alert className="mb-4" role="status">
+              <AlertDescription>{notice}</AlertDescription>
+            </Alert>
+          )}
           {oauthError && (
             <Alert variant="destructive" className="mb-4" role="alert">
               <AlertDescription>{oauthError}</AlertDescription>

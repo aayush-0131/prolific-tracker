@@ -181,12 +181,13 @@ export default function SettingsPage() {
         return
       }
 
-      toast.success("Password changed successfully!")
       setPasswordData({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       })
+      // Changing the password signs out every session, including this one.
+      await signOut({ callbackUrl: "/login?passwordChanged=1" })
     } catch (error) {
       toast.error("Something went wrong")
     } finally {
