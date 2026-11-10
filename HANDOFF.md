@@ -33,11 +33,7 @@ Stay free for ~1 month, then decide on freemium.
   (the one 'fail' is leftover duplicate rows in the probe account, i.e. duplicate detection working).
 - Session revocation PR #9 merged (audit finding fixed). Production verified with a two-device
   test: after a password change the other device gets 401, empty session, cookie cleared;
-  old password rejected, new works. CI (npm test) and Vercel preview passed. Verified on a local production build: home HTML
-  now has the H1/content/FAQ (live site serves only a spinner), FAQPage + WebApplication
-  JSON-LD in server HTML, per-route canonicals for /, /login, /register; app pages noindex;
-  signed-in / /login /register -> 307 /dashboard; robots.txt, sitemap, /llms.txt, 1200x630
-  OG image and apple-icon all served. tsc + eslint clean.
+  old password rejected, new works. CI (npm test) and Vercel preview passed.
 - Security audit COMPLETE (12/16 agents): findings.json + ledger pass both skill validators;
   1 confirmed medium (password change doesn't invalidate JWT sessions — reproduced in the
   sandbox with real authOptions), 1 needs_validation (unbounded CSV upload), 3 deferred units.
