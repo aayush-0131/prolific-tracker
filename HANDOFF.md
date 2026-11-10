@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~20:15 UTC by Claude Code (cloud session)  ·  Branch: main
+Last updated: 2026-11-10 end of day by Claude Code (cloud session)  ·  Branch: main
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -16,16 +16,6 @@ Stay free for ~1 month, then decide on freemium.
 - PR #6 merged (Recent Earnings: NULL start times sorted last + `?earned=true`). Verified:
   `npm test` 20/20, tsc + eslint clean, local build with the real export, and on production
   after deploy the widget lists the latest Approved studies; workflow suite 12/12 passed.
-- Security audit (cloudflare/security-audit-skill, quick profile, budget 16 agents):
-  Phase 1 done — 4 of 16 agents spent; architecture.md written; coverage-ledger.json seeded
-  with 10 units (5 planned hunters) and passes the skill's validate-coverage-ledger.cjs.
-- Audit sandbox hardened (tools in ~/audits/my-project/tools). Verified by an in-sandbox
-  self-test: runs as nobody with no capabilities, read-only mounts verified (fails closed),
-  no external network/DNS, host sockets hidden, cgroup memory cap kills a memory hog,
-  file-size cap holds, target unit tests 19/19 inside the sandbox.
-- Audit Phase 2 hunter wave done (9 of 16 agents spent): 10/10 ledger units closed — 8 covered,
-  2 candidates; ledger re-validated after each result. Candidates (not yet findings):
-  password change doesn't invalidate JWT sessions; unbounded CSV upload work.
 - SEO/AEO PR #7 merged; production verified: home HTML has H1, FAQ, FAQPage + WebApplication
   JSON-LD, no spinner; /opengraph-image and /llms.txt served.
 - Demo mode PR #10 merged: public /demo with generated sample data. Production verified on
@@ -34,20 +24,22 @@ Stay free for ~1 month, then decide on freemium.
 - Session revocation PR #9 merged (audit finding fixed). Production verified with a two-device
   test: after a password change the other device gets 401, empty session, cookie cleared;
   old password rejected, new works. CI (npm test) and Vercel preview passed.
-- Security audit COMPLETE (12/16 agents): findings.json + ledger pass both skill validators;
-  1 confirmed medium (password change doesn't invalidate JWT sessions — reproduced in the
-  sandbox with real authOptions), 1 needs_validation (unbounded CSV upload), 3 deferred units.
-  Reports: ~/audits/my-project (container-local) + copies sent to owner.
-- Audit final coverage critic done: 3 gaps (Google OAuth linking, login/register brute-force
-  limits, Host-header/private-response caching) recorded as deferred units (quick profile
-  allows no second wave). Ledger 13 units, validator PASS. 12 of 16 agents spent.
+- Security audit COMPLETE (cloudflare/security-audit-skill, quick profile, 12/16 agents) in a
+  hardened sandbox (nobody user, read-only, no network; self-tested). findings.json + ledger
+  pass the skill's validators: 1 confirmed medium (JWT sessions survived password change; fixed
+  in PR #9), 1 needs_validation (unbounded upload; capped in PR #12), 3 deferred units
+  (Google OAuth linking, login brute-force limits, Host-header caching). Reports in
+  ~/audits/my-project (container-local) + copies sent to owner.
 - Mobile on production (iPhone 13 emulation): all 11 pages 0px horizontal overflow, no page
   errors; mobile menu opens with all 8 links and navigates.
-
 - Phone CSV upload fix PR #12 merged (content-based check, broader accept, 5 MB cap).
   Production verified in Pixel 7 + iPhone 13 emulation: .CSV / no extension / .csv.txt / .csv
   all import; jpg and non-Prolific CSV refused with a clear toast; server 400 for non-Prolific,
   413 for 6 MB (Vercel itself rejects bodies >4.5 MB with a plain-text 413). CI passed.
+
+- Owner changed NEXTAUTH_SECRET and the Neon DB password (DATABASE_URL), both now Sensitive
+  in Vercel. Production verified after redeploy: register/login/earnings API OK, phone upload
+  test passes. Database is Neon Postgres (project prolific-tracker, branch production).
 
 ## In progress
 - (nothing in progress)
@@ -56,7 +48,7 @@ Stay free for ~1 month, then decide on freemium.
 1. Local-only guest mode (after demo mode ships).
 2. Hardening PR: security headers, lower client cap to 4 MB (Vercel 4.5 MB limit), row caps, validate exchange-rate response,
    remove /api/test-rates and ?debug=native, bound `limit` and bulk ids.
-3. Owner: Google Search Console (HTML-tag method via NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION).
+3. Optional: leave Neon Data API OFF (app doesn't use it). Owner: Google Search Console (HTML-tag method via NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION).
 4. Optional standard-profile audit of the 3 deferred units.
 
 ## Decisions & why
@@ -71,7 +63,8 @@ Stay free for ~1 month, then decide on freemium.
 ## Known broken / open questions
 - Prolific's "Total earned" exceeds the CSV export by a small amount; the export itself sums
   exactly to the tracker's totals, so Prolific counts money not present in the export.
-- Two throwaway test accounts exist in production (owner will delete them).
+- Test accounts (probe + tester) kept in production on purpose for future testing; safe to
+  delete anytime and recreate. Never store their passwords in this file.
 - Possible rename of the product (Prolific trademark) — undecided; affects SEO work.
 
 ## How to run / verify
