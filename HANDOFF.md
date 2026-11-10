@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~14:40 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
+Last updated: 2026-11-10 ~15:05 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -31,17 +31,22 @@ Stay free for ~1 month, then decide on freemium.
   JSON-LD in server HTML, per-route canonicals for /, /login, /register; app pages noindex;
   signed-in / /login /register -> 307 /dashboard; robots.txt, sitemap, /llms.txt, 1200x630
   OG image and apple-icon all served. tsc + eslint clean.
+- Audit final coverage critic done: 3 gaps (Google OAuth linking, login/register brute-force
+  limits, Host-header/private-response caching) recorded as deferred units (quick profile
+  allows no second wave). Ledger 13 units, validator PASS. 12 of 16 agents spent.
+- Mobile on production (iPhone 13 emulation): all 11 pages 0px horizontal overflow, no page
+  errors; mobile menu opens with all 8 links and navigates.
 
 ## In progress
-- Audit Phase 2 final coverage critic (1 agent), then Phase 3 verifiers (1 per candidate).
+- Audit Phase 3: 2 independent verifiers running (one per candidate).
   Audit files live in ~/audits/my-project (container-local, outside the repo; NOT durable).
+- Opening the SEO/AEO PR from feat/seo-aeo (not merged; owner approval needed).
 
 ## Next steps (ordered)
-1. Critic + verifiers; validate findings.json / ledger with the skill's validators; write
-   REPORT.md / FINDINGS-DETAIL.md / NEEDS-VALIDATION.md.
-2. Open the SEO/AEO PR (ask before merging); fix confirmed security findings in separate PRs.
-3. Mobile check of every page on production (Insights already verified: no overflow).
-4. Owner: Google Search Console (HTML-tag method via NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION).
+1. Verifier results -> findings.json; run both validators; write REPORT.md /
+   FINDINGS-DETAIL.md / NEEDS-VALIDATION.md; copy reports somewhere durable for the owner.
+2. Fix confirmed security findings in separate PRs (ask before merging).
+3. Owner: Google Search Console (HTML-tag method via NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION).
 
 ## Decisions & why
 - Login stays for now; "try with demo data" first, local-only guest mode later (owner undecided).
