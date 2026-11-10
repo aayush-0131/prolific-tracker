@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~14:05 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
+Last updated: 2026-11-10 ~14:40 UTC by Claude Code (cloud session)  ·  Branch: feat/seo-aeo
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -23,20 +23,25 @@ Stay free for ~1 month, then decide on freemium.
   self-test: runs as nobody with no capabilities, read-only mounts verified (fails closed),
   no external network/DNS, host sockets hidden, cgroup memory cap kills a memory hog,
   file-size cap holds, target unit tests 19/19 inside the sandbox.
+- Audit Phase 2 hunter wave done (9 of 16 agents spent): 10/10 ledger units closed — 8 covered,
+  2 candidates; ledger re-validated after each result. Candidates (not yet findings):
+  password change doesn't invalidate JWT sessions; unbounded CSV upload work.
+- SEO/AEO (branch feat/seo-aeo, not merged). Verified on a local production build: home HTML
+  now has the H1/content/FAQ (live site serves only a spinner), FAQPage + WebApplication
+  JSON-LD in server HTML, per-route canonicals for /, /login, /register; app pages noindex;
+  signed-in / /login /register -> 307 /dashboard; robots.txt, sitemap, /llms.txt, 1200x630
+  OG image and apple-icon all served. tsc + eslint clean.
 
 ## In progress
-- Security audit Phase 2: 5 hunters launched (9 of 16 agents spent); prompts built from
-  verbatim skill blocks (tools/build_prompts.py), ledger units marked in_progress.
-- SEO/AEO on this branch (feat/seo-aeo): reviewing metadata, robots, sitemap, landing page. Audit files live in ~/audits/my-project (container-local, outside the repo;
-  NOT durable across sessions). Local Postgres/next server stay stopped meanwhile.
+- Audit Phase 2 final coverage critic (1 agent), then Phase 3 verifiers (1 per candidate).
+  Audit files live in ~/audits/my-project (container-local, outside the repo; NOT durable).
 
 ## Next steps (ordered)
-1. Finish hunter wave, then critic + verifiers; validate
-   with the skill's validators; write REPORT.md / FINDINGS-DETAIL.md / NEEDS-VALIDATION.md.
-2. Fix confirmed security findings in separate PRs (ask before merging).
-3. SEO/AEO (this branch, feat/seo-aeo): llms.txt, FAQ + FAQPage JSON-LD, Open Graph image (layout references a missing
-   og-image.png), central site-name/URL config to make a rename cheap.
-4. Mobile check of every page on production (Insights already verified: no overflow).
+1. Critic + verifiers; validate findings.json / ledger with the skill's validators; write
+   REPORT.md / FINDINGS-DETAIL.md / NEEDS-VALIDATION.md.
+2. Open the SEO/AEO PR (ask before merging); fix confirmed security findings in separate PRs.
+3. Mobile check of every page on production (Insights already verified: no overflow).
+4. Owner: Google Search Console (HTML-tag method via NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION).
 
 ## Decisions & why
 - Login stays for now; "try with demo data" first, local-only guest mode later (owner undecided).

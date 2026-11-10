@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import Script from "next/script"
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 import AuthProvider from "@/components/providers/AuthProvider"
@@ -110,7 +109,8 @@ export default function RootLayout({
         <SpeedInsights />
 
         {/* 🔥 Structured Data for Google Rich Results */}
-        <Script
+        {/* Plain <script> so the JSON-LD is in the server HTML (next/script injects it client-side). */}
+        <script
           id="structured-data"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
