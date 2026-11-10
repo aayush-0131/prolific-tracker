@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { parseProlificCSV } from "@/lib/csv-parser"
 import { fetchLiveRates } from "@/lib/currency"
 import { importChanges, occurrenceIndexes } from "@/lib/earning-rules"
+import { MAX_UPLOAD_BYTES, checkProlificCsvHeader } from "@/lib/csv-file"
 
 // POST /api/upload - Upload and parse CSV file
 // POST /api/upload - Upload and parse CSV file
@@ -33,10 +34,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Validate file type
-    if (!file.name.endsWith(".csv")) {
+    // Validate by size and content, not file name (phones rename CSVs).
+    if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json(
-        { error: "Only CSV files are allowed" },
+        { error: "File is larger than 5 MB" },
+        { status: 413 }
+      )
+    }
+    const header = checkProlificCsvHeader(await file.slice(0, 64 * 1024).text())
+    if (!header.ok) {
+      return NextResponse.json(
+        { error: `Not a Prolific submissions CSV (missing: ${header.missing.join(", ")})` },
         { status: 400 }
       )
     }

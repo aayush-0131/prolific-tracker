@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { CSV_ACCEPT, MAX_UPLOAD_BYTES, checkProlificCsvHeader } from "@/lib/csv-file"
 import { formatCurrency } from "@/lib/utils"
 
 interface UploadResult {
@@ -38,28 +39,37 @@ export default function UploadPage() {
     setIsDragging(false)
   }, [])
 
+  // Decide by content, not file name: phones save CSVs as ".CSV", without an
+  // extension, or as ".csv.txt" (see lib/csv-file.ts).
+  const acceptFile = useCallback(async (candidate: File | undefined) => {
+    if (!candidate) return
+    if (candidate.size > MAX_UPLOAD_BYTES) {
+      toast.error("That file is larger than 5 MB. Please upload your Prolific submissions CSV.")
+      return
+    }
+    const head = await candidate.slice(0, 64 * 1024).text()
+    const check = checkProlificCsvHeader(head)
+    if (!check.ok) {
+      toast.error(
+        `This doesn't look like a Prolific submissions CSV (missing column${check.missing.length === 1 ? "" : "s"}: ${check.missing.join(", ")}).`
+      )
+      return
+    }
+    setFile(candidate)
+    setResult(null)
+  }, [])
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
-
-    const droppedFile = e.dataTransfer.files[0]
-    if (droppedFile && droppedFile.name.endsWith(".csv")) {
-      setFile(droppedFile)
-      setResult(null)
-    } else {
-      toast.error("Please upload a CSV file")
-    }
-  }, [])
+    void acceptFile(e.dataTransfer.files[0])
+  }, [acceptFile])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (selectedFile && selectedFile.name.endsWith(".csv")) {
-      setFile(selectedFile)
-      setResult(null)
-    } else {
-      toast.error("Please upload a CSV file")
-    }
-  }, [])
+    void acceptFile(e.target.files?.[0])
+    // Allow picking the same file again after an error.
+    e.target.value = ""
+  }, [acceptFile])
 
   const handleUpload = async () => {
     if (!file) return
@@ -192,14 +202,14 @@ export default function UploadPage() {
                         <input
                           id="file-upload"
                           type="file"
-                          accept=".csv"
+                          accept={CSV_ACCEPT}
                           onChange={handleFileSelect}
                           className="hidden"
                         />
                       </label>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Only CSV files are supported
+                      Your Prolific submissions export (.csv), up to 5 MB
                     </p>
                   </div>
                 )}
