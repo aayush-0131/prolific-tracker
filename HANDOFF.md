@@ -1,5 +1,5 @@
 # Handoff — prolific-tracker
-Last updated: 2026-11-10 ~18:10 UTC by Claude Code (cloud session)  ·  Branch: fix/session-revocation
+Last updated: 2026-11-10 ~19:00 UTC by Claude Code (cloud session)  ·  Branch: feat/demo-mode
 
 ## Goal (current milestone)
 Make the live site (prolific-tracker-alpha.vercel.app) solid enough to share with a small
@@ -26,7 +26,11 @@ Stay free for ~1 month, then decide on freemium.
 - Audit Phase 2 hunter wave done (9 of 16 agents spent): 10/10 ledger units closed — 8 covered,
   2 candidates; ledger re-validated after each result. Candidates (not yet findings):
   password change doesn't invalidate JWT sessions; unbounded CSV upload work.
-- SEO/AEO PR #7 MERGED (CI test job + Vercel preview passed). Verified on a local production build: home HTML
+- SEO/AEO PR #7 merged; production verified: home HTML has H1, FAQ, FAQPage + WebApplication
+  JSON-LD, no spinner; /opengraph-image and /llms.txt served.
+- Session revocation PR #9 merged (audit finding fixed). Production verified with a two-device
+  test: after a password change the other device gets 401, empty session, cookie cleared;
+  old password rejected, new works. CI (npm test) and Vercel preview passed. Verified on a local production build: home HTML
   now has the H1/content/FAQ (live site serves only a spinner), FAQPage + WebApplication
   JSON-LD in server HTML, per-route canonicals for /, /login, /register; app pages noindex;
   signed-in / /login /register -> 307 /dashboard; robots.txt, sitemap, /llms.txt, 1200x630
@@ -42,13 +46,13 @@ Stay free for ~1 month, then decide on freemium.
   errors; mobile menu opens with all 8 links and navigates.
 
 ## In progress
-- PR for fix/session-revocation (audit finding: sessions survive password change). Verified
-  locally: npm test 25/25; two-device test (B changes password -> A gets 401, empty session,
-  cookie cleared; old password rejected, new works); workflow suite 12/12. Then merge + prod check.
-- Next: demo mode ("try with sample data"), owner-approved first step of optional login.
+- Demo mode PR (feat/demo-mode): public /demo with generated sample data. Verified locally:
+  npm test 28/28, tsc + eslint clean; /demo via landing "Try the Demo" on desktop and phone
+  (0px overflow, no page errors, server HTML has intro + canonical); /insights unchanged after
+  the InsightsView refactor. Then: CI + preview, merge, production check.
 
 ## Next steps (ordered)
-1. Demo mode (/demo with generated sample data, no login), then local-only guest mode later.
+1. Local-only guest mode (after demo mode ships).
 2. Hardening PR: security headers, upload size/row caps, validate exchange-rate response,
    remove /api/test-rates and ?debug=native, bound `limit` and bulk ids.
 3. Owner: Google Search Console (HTML-tag method via NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION).

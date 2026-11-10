@@ -53,14 +53,19 @@ export default function LandingPage() {
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="text-lg px-8">
-              <Link href="/login">
-                Sign In
+              <Link href="/demo">
+                Try the Demo
               </Link>
             </Button>
           </div>
 
+          <p className="text-sm mt-4">
+            Already have an account?{" "}
+            <Link href="/login" className="text-primary hover:underline">Sign in</Link>
+          </p>
+
           <p className="text-sm text-muted-foreground mt-4">
-            No credit card required • Takes 30 seconds to set up
+            No credit card required • Try the demo without signing up
           </p>
         </div>
       </div>
