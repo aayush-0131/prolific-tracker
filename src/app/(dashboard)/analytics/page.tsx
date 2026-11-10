@@ -116,7 +116,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              £{(analytics.averageHourlyRate || 0).toFixed(2)}/hr
+              {analytics.currency === "USD" ? "$" : "£"}{(analytics.averageHourlyRate || 0).toFixed(2)}/hr
             </div>
           </CardContent>
         </Card>

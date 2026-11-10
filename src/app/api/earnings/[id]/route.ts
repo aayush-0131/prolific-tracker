@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { z } from "zod"
 
 // GET /api/earnings/[id] - Get single earning
 export async function GET(
@@ -45,6 +46,17 @@ export async function GET(
 }
 
 // PUT /api/earnings/[id] - Update earning
+// Only descriptive fields are editable. Amounts, totals and ownership are
+// derived on import/creation; to change an amount, delete and re-add.
+const updateEarningSchema = z
+  .object({
+    studyTitle: z.string().min(1).optional(),
+    status: z.enum(["APPROVED", "AWAITING REVIEW", "RETURNED", "REJECTED", "SCREENED OUT", "TIMED-OUT"]).optional(),
+    completionCode: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+  })
+  .strict()
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }  // ✅ FIXED: Added Promise
@@ -61,7 +73,13 @@ export async function PUT(
       )
     }
 
-    const body = await req.json()
+    const parsed = updateEarningSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || "Invalid update" },
+        { status: 400 }
+      )
+    }
 
     // Verify ownership
     const existing = await prisma.earning.findFirst({
@@ -82,10 +100,7 @@ export async function PUT(
       where: {
         id: id,  // ✅ FIXED: Use unwrapped id
       },
-      data: {
-        ...body,
-        updatedAt: new Date(),
-      },
+      data: parsed.data,
     })
 
     return NextResponse.json(earning)

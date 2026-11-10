@@ -14,6 +14,7 @@ interface UploadResult {
   fileName: string
   recordCount: number
   importedCount: number
+  updatedCount?: number
   duplicateCount: number
   errorCount: number
   errors: string[]
@@ -86,6 +87,8 @@ export default function UploadPage() {
 
       if (data.importedCount > 0) {
         toast.success(`Successfully imported ${data.importedCount} earnings!`)
+      } else if (data.updatedCount > 0) {
+        toast.success(`Updated ${data.updatedCount} existing ${data.updatedCount === 1 ? "study" : "studies"}`)
       } else if (data.duplicateCount > 0) {
         toast.info("All records were duplicates - nothing new to import")
       }
@@ -210,6 +213,8 @@ export default function UploadPage() {
       <CheckCircle className="h-16 w-16 text-green-500" />
     ) : result.importedCount > 0 ? (
       <AlertCircle className="h-16 w-16 text-yellow-500" />
+    ) : (result.updatedCount ?? 0) > 0 ? (
+      <CheckCircle className="h-16 w-16 text-green-500" />
     ) : result.duplicateCount > 0 ? (
       <AlertCircle className="h-16 w-16 text-blue-500" />
     ) : (
@@ -221,6 +226,8 @@ export default function UploadPage() {
     <h3 className="text-xl font-semibold mb-2">
       {result.importedCount > 0
         ? "Import Successful!"
+        : (result.updatedCount ?? 0) > 0
+        ? "Earnings Updated"
         : result.duplicateCount > 0
         ? "Already Imported"
         : "Import Complete"}
@@ -232,14 +239,18 @@ export default function UploadPage() {
     </p>
   </div>
 
-  <div className="grid grid-cols-3 gap-4">
+  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
     <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
       <p className="text-3xl font-bold text-green-600">{result.importedCount}</p>
       <p className="text-sm text-green-700 mt-1">New Studies</p>
     </div>
+    <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+      <p className="text-3xl font-bold text-purple-600">{result.updatedCount ?? 0}</p>
+      <p className="text-sm text-purple-700 mt-1">Updated</p>
+    </div>
     <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
       <p className="text-3xl font-bold text-blue-600">{result.duplicateCount}</p>
-      <p className="text-sm text-blue-700 mt-1">Duplicates Skipped</p>
+      <p className="text-sm text-blue-700 mt-1">Unchanged</p>
     </div>
     <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
       <p className="text-3xl font-bold text-red-600">{result.errorCount}</p>
