@@ -18,6 +18,7 @@ export async function proxy(request: NextRequest) {
     "/upload",
     "/add",
     "/analytics",
+    "/insights",
     "/settings",
   ]
 

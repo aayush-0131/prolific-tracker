@@ -138,10 +138,14 @@ export async function GET(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { currency: true },
+      select: { currency: true, fiscalYearStart: true },
     })
 
-    return NextResponse.json({ earnings, currency: user?.currency || "GBP" })
+    return NextResponse.json({
+      earnings,
+      currency: user?.currency || "GBP",
+      fiscalYearStart: user?.fiscalYearStart || 1,
+    })
 
   } catch (error) {
     console.error("Get earnings error:", error)
