@@ -31,6 +31,19 @@ export function isCountable(e: EarningAmounts): boolean {
   return false
 }
 
+/**
+ * Database filter (Prisma `where`) matching exactly the rows isCountable()
+ * treats as earned, for lists such as "Recent Earnings".
+ */
+export function earnedWhere() {
+  return {
+    OR: [
+      { status: { in: [...REWARD_PAID] } },
+      { status: { in: [...BONUS_ONLY] }, totalEarning: { gt: 0 } },
+    ],
+  }
+}
+
 /** Currency the money was actually paid in (the bonus currency when only the bonus was paid). */
 export function paidCurrency(e: EarningAmounts): string {
   const rewardPaid = e.status === "APPROVED" || e.status === "AWAITING REVIEW"
