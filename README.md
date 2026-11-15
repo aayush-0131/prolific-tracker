@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Prolific Tracker
 
-## Getting Started
+A free earnings tracker for [Prolific](https://www.prolific.com) participants.
 
-First, run the development server:
+**Live:** [prolific-tracker-alpha.vercel.app](https://prolific-tracker-alpha.vercel.app) · **Try it without an account:** [/demo](https://prolific-tracker-alpha.vercel.app/demo)
+
+Prolific shows a running balance, but not the numbers participants actually care about: real hourly rate, money still pending, earnings by tax year, or which days and hours pay best. Prolific Tracker turns the submissions CSV you export from Prolific into those answers.
+
+## Features
+
+- **CSV import** of your Prolific submissions export. Re-uploading a newer export updates studies whose status changed and skips rows already stored. Files are checked by content, not just extension, so uploads from phones work.
+- **Dashboard** with approved and pending totals, an earnings chart, a weekly goal and recent earnings.
+- **Real hourly rate** computed from time actually spent on studies.
+- **GBP and USD** totals using live exchange rates (cached hourly, with fallbacks).
+- **Calendar, analytics and insights** pages: tax-year totals and the days and hours you earn best.
+- **Manual entries** for studies not in the export.
+- **Demo mode** with generated sample data, so anyone can explore the app without signing up.
+- **Accounts** with email and password. Changing your password signs out every other device.
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js (App Router), React, TypeScript |
+| Data | PostgreSQL via Prisma |
+| Auth | NextAuth |
+| UI | Tailwind CSS, Radix UI / shadcn components, Recharts |
+| Hosting | Vercel |
+
+## Running locally
+
+Requirements: Node.js 20+ and a PostgreSQL database.
 
 ```bash
+npm ci
+# create .env.local first, see below
+npx prisma migrate deploy
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local` needs:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/prolific_tracker
+NEXTAUTH_SECRET=<any long random string>
+NEXTAUTH_URL=http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Then open <http://localhost:3000>.
 
-## Learn More
+## Tests
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm test             # unit tests (CSV parsing, earning rules, insights, auth, sessions)
+npx tsc --noEmit     # type check
+npm run lint
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project layout
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/app/            routes: landing page, auth, dashboard pages, API routes
+src/components/     dashboard widgets, layout, UI primitives
+src/lib/            CSV parsing, earning rules, currency, insights, auth
+prisma/             database schema and migrations
+```
 
-## Deploy on Vercel
+## Disclaimer
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Prolific Tracker is an independent, community-made tool. It is not affiliated with, endorsed by, or sponsored by Prolific.
